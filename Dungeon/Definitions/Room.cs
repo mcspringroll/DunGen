@@ -14,6 +14,12 @@ namespace DungeonAPI.Definitions
         public Room East { get; set; }
         public Room South { get; set; }
         public Room West { get; set; }
+
+        public bool IsConnectedToNorth { get; set; }
+        public bool IsConnectedToEast { get; set; }
+        public bool IsConnectedToSouth { get; set; }
+        public bool IsConnectedToWest { get; set; }
+
         public List<Item> Items { get; set; }
         public List<Enemy> Enemies { get; set; }
         public int X { get; private set; }

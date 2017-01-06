@@ -13,7 +13,7 @@ namespace DungeonAPI.Generation
     /// </summary>
     public sealed class GenerationCommand
     {
-        protected const byte
+        private const byte
             MASK_REPETITIONS = 0xf0, //1111 0000
             MASK_DIRECTIONS = 0x0f, //0000 1111
             MASK_NORTH = 0x08, //0000 1000
@@ -133,11 +133,19 @@ namespace DungeonAPI.Generation
             return (repetitionsAndDirections & MASK_NORTH) == MASK_NORTH;
         }
 
+        /// <summary>
+        /// If this command should allow trying to build to the east.
+        /// </summary>
+        /// <returns></returns>
         public bool shouldTryToBuildEast()
         {
             return (repetitionsAndDirections & MASK_EAST) == MASK_EAST;
         }
-
+        
+        /// <summary>
+        /// If this command should allow trying to build to the south.
+        /// </summary>
+        /// <returns></returns>
         public bool shouldTryToBuildSouth()
         {
             return (repetitionsAndDirections & MASK_SOUTH) == MASK_SOUTH;
