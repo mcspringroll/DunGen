@@ -141,7 +141,11 @@ namespace DungeonAPI.Generation
         {
             return (repetitionsAndDirections & MASK_EAST) == MASK_EAST;
         }
-
+        
+        /// <summary>
+        /// If this command should allow trying to build to the south.
+        /// </summary>
+        /// <returns></returns>
         public bool shouldTryToBuildSouth()
         {
             return (repetitionsAndDirections & MASK_SOUTH) == MASK_SOUTH;
