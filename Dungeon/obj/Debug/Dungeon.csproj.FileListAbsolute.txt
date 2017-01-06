@@ -1,0 +1,4 @@
+C:\Users\Matthew\Documents\Visual Studio 2015\Projects\Dungeon\Dungeon\bin\Debug\Dungeon.dll
+C:\Users\Matthew\Documents\Visual Studio 2015\Projects\Dungeon\Dungeon\bin\Debug\Dungeon.pdb
+C:\Users\Matthew\Documents\Visual Studio 2015\Projects\Dungeon\Dungeon\obj\Debug\Dungeon.dll
+C:\Users\Matthew\Documents\Visual Studio 2015\Projects\Dungeon\Dungeon\obj\Debug\Dungeon.pdb
