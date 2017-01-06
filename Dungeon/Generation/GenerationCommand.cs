@@ -13,7 +13,7 @@ namespace DungeonAPI.Generation
     /// </summary>
     public sealed class GenerationCommand
     {
-        protected const byte
+        private const byte
             MASK_REPETITIONS = 0xf0, //1111 0000
             MASK_DIRECTIONS = 0x0f, //0000 1111
             MASK_NORTH = 0x08, //0000 1000
