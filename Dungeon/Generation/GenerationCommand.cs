@@ -133,6 +133,10 @@ namespace DungeonAPI.Generation
             return (repetitionsAndDirections & MASK_NORTH) == MASK_NORTH;
         }
 
+        /// <summary>
+        /// If this command should allow trying to build to the east.
+        /// </summary>
+        /// <returns></returns>
         public bool shouldTryToBuildEast()
         {
             return (repetitionsAndDirections & MASK_EAST) == MASK_EAST;
