@@ -8,3 +8,8 @@ C:\Users\Matthew\Documents\GitHub\DunGen\Dungeon\bin\Debug\Dungeon.pdb
 C:\Users\Matthew\Documents\GitHub\DunGen\Dungeon\obj\Debug\DungeonAPI.csprojResolveAssemblyReference.cache
 C:\Users\Matthew\Documents\GitHub\DunGen\Dungeon\obj\Debug\Dungeon.dll
 C:\Users\Matthew\Documents\GitHub\DunGen\Dungeon\obj\Debug\Dungeon.pdb
+C:\Users\hazel\Source\Repos\DunGen\Dungeon\bin\Debug\Dungeon.dll
+C:\Users\hazel\Source\Repos\DunGen\Dungeon\bin\Debug\Dungeon.pdb
+C:\Users\hazel\Source\Repos\DunGen\Dungeon\obj\Debug\DungeonAPI.csprojResolveAssemblyReference.cache
+C:\Users\hazel\Source\Repos\DunGen\Dungeon\obj\Debug\Dungeon.dll
+C:\Users\hazel\Source\Repos\DunGen\Dungeon\obj\Debug\Dungeon.pdb
