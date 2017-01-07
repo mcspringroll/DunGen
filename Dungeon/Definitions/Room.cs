@@ -69,6 +69,8 @@ namespace DungeonAPI.Definitions
             this.South = southernRoom;
             this.X = southernRoom.X;
             this.Y = southernRoom.Y + 1;
+            this.IsConnectedToSouth = true;
+            southernRoom.IsConnectedToNorth = true;
             return true;
         }
 
@@ -80,6 +82,8 @@ namespace DungeonAPI.Definitions
             this.West = westernRoom;
             this.X = westernRoom.X + 1;
             this.Y = westernRoom.Y;
+            this.IsConnectedToWest = true;
+            westernRoom.IsConnectedToEast = true;
             return true;
         }
 
@@ -91,6 +95,8 @@ namespace DungeonAPI.Definitions
             this.North = northernRoom;
             this.X = northernRoom.X;
             this.Y = northernRoom.Y - 1;
+            this.IsConnectedToNorth = true;
+            northernRoom.IsConnectedToSouth = true;
             return true;
         }
 
@@ -102,6 +108,8 @@ namespace DungeonAPI.Definitions
             this.East = easternRoom;
             this.X = easternRoom.X - 1;
             this.Y = easternRoom.Y;
+            this.IsConnectedToEast = true;
+            easternRoom.IsConnectedToWest = true;
             return true;
         }
         #endregion
