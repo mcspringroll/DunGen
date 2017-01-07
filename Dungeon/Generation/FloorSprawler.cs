@@ -7,10 +7,23 @@ using System.Threading.Tasks;
 
 namespace DungeonAPI.Generation
 {
+    /// <summary>
+    /// Controls the construction of floor by
+    /// keeping track of the newest and oldest
+    /// rooms added.  Allows for depth or breadth
+    /// first style generation
+    /// </summary>
     class FloorSprawler
     {
+        /// <summary>
+        /// Specifies whether this search should be
+        /// primarily depth first or breadth first.
+        /// </summary>
         public bool IsDepthFirst{get; set;}
 
+        /// <summary>
+        /// 
+        /// </summary>
         private Node FrontNode { get; set; }
 
         private Node EndNode { get; set; }
@@ -102,8 +115,14 @@ namespace DungeonAPI.Generation
         /// This is done by taking either the first or
         /// last element of the existing FloorSprawler
         /// and adding it to either the "front" or the
-        /// "back" of a new FloorSprawler.  Sould kind
+        /// "back" of a new FloorSprawler.  Should kind
         /// of turn the contents inside out.
+        /// 
+        /// I checked how this performs in an outside
+        /// project.  It performs semi-well with a high 
+        /// tendency to leave the outer sections 
+        /// less sorted than inner sections.  Therefore
+        /// it should be rewritten.
         /// </summary>
         public void shuffleRooms()
         {
