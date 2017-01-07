@@ -1,0 +1,62 @@
+Bit String Generation Command
+
+Generation Modifier Ideas:
+    Randomize Rooms after each segment repetition
+    Join rooms when collide
+    Update current room's path spread distance to match older room's path spread distance - 1
+    Update older room's path spread distance to match current room's path spread distance - 1   --  Would also prompt that room to try adding neighbor rooms again.
+    Escape portal rooms.  -  Can return to surface early, but many monsters in the room.  Also, portal closes if not entered soon enough.
+    Intersperse boss rooms.  Low chance for boss to be in non-exit room.
+    
+
+
+32 bits per command segment  (A safe overkill, also, should be easy to work with individual bytes)
+
+   Repetitions of segment   |   Next Direction Bits   |   Wall Chance   |   Controller Bits1   |   Controller Bits2   |
+             4              |           4             |        8        |          8           |          8           |
+            
+Repetitions 1 - 16
+
+Wall Chance 0 - 255
+
+
+Controller Bits (16) (MSB(15) to LSB(0)) xxxx xxxx xxxx xxxx
+
+15. Depth or breadth first sprawl
+    if (ControllerBits1 == 1xxx xxxx)
+    then depth first
+    else breadth first
+    
+14. Shuffle active rooms after a complete pass of possible rooms for this segment
+    if (ControllerBits1 == x1xx xxxx)
+    then shuffle
+    else don't shuffle
+    
+13. Shuffle possible rooms for this segment
+    if (ControllerBits1 == xx1x xxxx)
+    then shuffle
+    else don't shuffle
+    
+12. Toggle whether this segment is depth or breadth first after a complete pass
+    if (ControllerBits1 == xxx1 xxxx)
+    then toggle
+    else don't toggle
+    
+11. Connect adjacent rooms
+    if (ControllerBits1 == xxxx 1xxx)
+    then connect
+    else don't connect
+
+10. Always branch from new room
+    if (ControllerBits1 == xxxx x1xx)
+    then get and remove the "next" room from the list and put it at the "end"
+    else get the "next" room, but do not remove or re-add
+    
+    
+    
+    
+    
+    
+    
+    
+    

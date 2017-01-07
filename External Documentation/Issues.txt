@@ -1,0 +1,60 @@
+These are known/suspected issues with implemented strategies.
+
+Index:
+
+Floor Generator - fg
+
+
+
+
+
+
+
+
+Floor Generator issues:
+
+fg01
+
+Code Source
+    Retrieve the next room to be added to.  This room is guaranteeed
+    to have at least one open side, though not necessarily any side
+    that the command from step 1 will try to add to.
+Issue Explained
+    While the next room will always have an open side, that open side
+    may never be attempted to be filled.  This could create an infinite
+    generation attempt if the "next room" does not contain an open room
+    that any GenerationCommand attempts to write to.  We can come up 
+    with a contrived example fairly easily if we imagine a command that 
+    only adds rooms to the north and does a breadth first generation.
+    So the generator will create the room directly north of the start
+    room, then it will add that room to the "end" of the list of active
+    rooms.  Since we are in a breadth first setting, the next room to
+    be added to will be the one at the "front" of the list of active
+    rooms.  This will (again) be the start room.  The generator will
+    then unsuccessfully attempt to add to the north before moving on to
+    the next command/room.  This will repeat until indefinitely.
+Potential Solutions
+    If no rooms are added during a pass, add one to a counter, else set
+    the counter to 0.  If the counter reaches some number (10? 50?)
+    then throw a BadCommand error.
+        - Not really a solution, more of an escape.
+        - Forces issue elsewhere, probably onto an annoyed user.
+        - Forces "dumb" commands to be handled properly instead of trying to make them work.
+    If no rooms are added during a pass, add one to a counter, else set
+    the counter to 0.  If the counter reaches some number (25? 50?)
+    then remove the next room from the active list before getting the
+    next room.
+        - Solves the issue instead of forcing it on someone else, likely an annoyed user.
+        - Prevents rooms that have open sides from ever being added to again.
+        - Spends a small amount of time trying to make "dumb" commands work.
+    If no rooms are added during a pass, add one to a counter, else set
+    the counter to 0.  If the counter reaches some number (10? 50?)
+    then scramble the list of active rooms.  Add one to a second 
+    counter.  Set first counter to 0.  If a room is added, set the 
+    second counter to 0.  If the second counter reaches some number (5?
+    10?) then throw a BadCommand error.
+        - Tries to solve before forcing the issue elsewhere.
+        - Spends a large amount of time trying to make a "dumb" command work.
+        - Essentially disregards the intent of the command.
+        - Does not destroy rooms that can still be added to.
+    
