@@ -22,6 +22,9 @@ namespace DungeonAPI.Generation
             floorBeingBuilt = new Floor();
             allCommands = GenerationCommand.parseArray(commands);
             activeFloorSprawler = new FloorSprawler();
+            //I'm assuming at some point the Room constructor or
+            //Floor constructor will be changed so that Room properties can 
+            //be easily set when constructing a new Room?
             activeFloorSprawler.addRoom(floorBeingBuilt.StartRoom);
             commandCount = roomsBuilt = 0;
             populateFloorWithRooms();
@@ -29,10 +32,17 @@ namespace DungeonAPI.Generation
 
         private void populateFloorWithRooms()
         {
-            while (floorBeingBuilt.RoomCount > roomsBuilt)
+            while (floorBeingBuilt.RoomCount > roomsBuilt) //RoomCount isn't initialized in Floor()
             {
                 executeNextCommand();
                 commandCount = (commandCount + 1) % allCommands.Length;
+                //why would you need to execute more commands than you have? 
+                //if RoomCount is bigger than the number of commands you have? 
+                //how are you generating arrays of commands (assuming this is gonna be another class 
+                //to generate a huge array of unsigned ints--some sort of command generator class?)
+                //and can't you just always generate the right number of commands?
+                //is this going to be randomly generated, or will you set certain commands for different
+                //levels or floors? if so, probably need some sort of util class to store those arrays
             }
         }
 
@@ -121,6 +131,8 @@ namespace DungeonAPI.Generation
                     activeFloorSprawler.removeNextRoom();
                     activeFloorSprawler.addRoom(currentRoom);
                 }
+                //so every time, you're removing NextRoom and then adding it back instantly. why?
+                //I get that it might change the order (remove first node, add at end node) but otherwise...
                 // 6.
                 Room[] roomsInPass = new Room[currentCommand.roomsInSinglePass()];
                 int roomsInArray = 0;
@@ -128,6 +140,9 @@ namespace DungeonAPI.Generation
                 if (currentCommand.shouldTryToBuildNorth() // 7a. Command to build north
                     && !floorBeingBuilt.hasRoomAtCoords(currentRoom.X, currentRoom.Y + 1) // 7b. No room exists to north
                     && (new Room()).setToNorthOf(currentRoom)) // 7c. Try to add room to the north
+                    //I think (maybe) these last two checks are now redundant b/c we store all rooms
+                    //around a room, connected or not, and setToNorthOf checks to see if currentRoom
+                    //has a North room (so i think we can delete the middle condition)
                 {
                     // 7d.
                     roomsInPass[roomsInArray] = currentRoom.North;
@@ -143,6 +158,9 @@ namespace DungeonAPI.Generation
                         }
                         currentRoom = activeFloorSprawler.getNextRoom();
                         activeFloorSprawler.removeNextRoom();
+                        //okay i thought i was maybe starting to understand shouldAlwaysBranchFromNewRoom
+                        //but now I am even more confused. didn't you just...remove the current room from
+                        //the floor sprawler?
                     }
                 }
                 if (currentCommand.shouldTryToBuildEast()
