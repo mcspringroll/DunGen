@@ -8,289 +8,528 @@ using System.Threading.Tasks;
 
 namespace DungeonAPI.Generation
 {
-    public class Floor_Generator
+    public class FloorGenerator
     {
+        private const int MAXIMUM_GENERATION_FAILS_BEFORE_COMMAND_IS_SKIPPED = 50;
+
         private Floor floorBeingBuilt;
         private GenerationCommand[] allCommands;
+        private GenerationCommand currentCommand;
         private FloorSprawler activeFloorSprawler;
         private int
             commandCount,
             roomsBuilt;
 
-        public Floor_Generator(uint[] commands)
+        public FloorGenerator(uint[] commands)
         {
             floorBeingBuilt = new Floor();
             allCommands = GenerationCommand.parseArray(commands);
             activeFloorSprawler = new FloorSprawler();
             activeFloorSprawler.addRoom(floorBeingBuilt.StartRoom);
             commandCount = roomsBuilt = 0;
-            populateFloorWithRooms();
+            PopulateFloorWithRooms();
         }
 
-        private void populateFloorWithRooms()
+        /// <summary>
+        /// Executes commands in order until the floor has the
+        /// appropriate number of rooms.
+        /// </summary>
+        private void PopulateFloorWithRooms()
         {
             while (floorBeingBuilt.RoomCount > roomsBuilt)
             {
-                executeNextCommand();
-                commandCount = (commandCount + 1) % allCommands.Length;
+                ExecuteNextCommand();
             }
         }
 
         /// <summary>
-        /// This is the heart of the floor generator, honestly.  As a result it
-        /// is one beast of a method.  I'll go through step by step (steps are
-        /// internally labeled as well):
-        /// 
-        /// 1. Get the next command, wrap around (in case we need to execute
-        /// more commands than we have) is handled in populateFloorWithRooms
-        /// where commandCount is set.
-        /// 
-        /// 2. Set activeFloorSprawler to be either DepthFirst or BreadthFirst
-        /// depending on the command.  DepthFirst adds on to most recently
-        /// added rooms and BreadthFirst adds on to least recently (oldest)
-        /// rooms.
-        /// 
-        /// 3. Add the number of rooms required by this command.  This is a
-        /// number between 1 and 16.  If a higher number of rooms is desired,
-        /// just repeat the command.
-        /// 
-        /// 4. Retrieve the next room to be added to.  This room is guaranteeed
-        /// to have at least one open side, though not necessarily any side
-        /// that the command from step 1 will try to add to (issue fg01).
-        /// 
-        /// 5. Move the "next" room to the "end" of the floorsprawler if flag
-        /// bit is active.  This effectively does nothing if the sprawl type is
-        /// set to depth first.  This is also checked after each new room is
-        /// created.
-        /// 
-        /// 6. Create an array of big enough size to contain any rooms that may
-        /// be added in this pass.  Every index location is not guaranteed to
-        /// be non-null.  This is because a room may be suggested to be added,
-        ///  but there is another room at that location already.
-        /// 
-        /// 7. This attempts to build four rooms, one in each direction.  The 
-        /// directions are attempted in the NESW order.  The factors that may 
-        /// prevent a room from being built are as follows:
-        ///     7a. Only build if the command calls for a room in the
-        ///              direction.
-        ///     7b. Only build if no room exists at the coordinates the new
-        ///             room would be built in.
-        ///     7c. Do not add if there was an issue connecting the two rooms.
-        ///             Realistically, this should never actually restrict a
-        ///             room from being built.
-        /// 7. (continued) After a room has successfully been created, do the
-        /// following:
-        ///     7d. Add it to the array created in step 5.
-        ///     7e. Finalize a room before moving to the next if command calls
-        ///             for each "next" room to be "new."  If not, finalizing
-        ///             is handled later (8b and 8c).
-        /// 
-        /// 8. Takes care of any non-directional checks and changes for rooms
-        /// that are being added.  Only done if command does not call for
-        /// each "next" room to be "new."  This includes:
-        ///     8a. Shuffle the rooms in this pass before adding them to the
-        ///                 sprawler.  
-        ///     8b. Try to turn room into wall.  This is handled by a method.
-        ///     8c. If the room was not turned into a wall, do the following:
-        ///         8c1. Decrement the counter for the number of rooms left
-        ///                 to be built.
-        ///         8c2. Adds the room to the floor sprawler.
-        /// 
-        /// 9. Takes care of connecting rooms to their neighbors if the current
-        /// command string calls for it. Some details follow:
-        ///     9a. Only try a direction if the room does not already have a
-        ///             connection in that direction.
-        ///     9b. Get the room that is directly to the north of the current 
-        ///             room (if one exists) and connect them.
+        /// Triggers all of the generation based on the
+        /// next command in allCommands.
         /// </summary>
-        private void executeNextCommand()
+        private void ExecuteNextCommand()
         {
-            // 1.
-            GenerationCommand currentCommand = allCommands[commandCount];
-            // 2.
+            UpdateCurrentCommand();
+            UpdateFloorSprawlerGrowthPattern();
+            bool successfullyExecuted = ExecuteCommandLoop();
+
+            if(!successfullyExecuted)
+            {
+                //We should do something here.  Because if this was triggered,
+                //there was a lot of failed attempts.  Potentially re-add all
+                //rooms to the sprawler.  Or clear some walls or something.
+            }
+        }
+
+        /// <summary>
+        /// Updates the currentCommand instance variable that is used
+        /// by most other methods.  Also updates the commandCount instance
+        /// variable that specifies what is the next command.  If this
+        /// count excedes the number of commands available, it will wrap
+        /// to zero and start the cycle over again.
+        /// </summary>
+        private void UpdateCurrentCommand()
+        {
+            currentCommand = allCommands[commandCount];
+            commandCount = (commandCount + 1) % allCommands.Length;
+        }
+
+        /// <summary>
+        /// Set activeFloorSprawler to be either DepthFirst or BreadthFirst.
+        /// DepthFirst adds on to most recently added rooms and 
+        /// BreadthFirst adds on to least recently (oldest) rooms.
+        /// </summary>
+        private void UpdateFloorSprawlerGrowthPattern()
+        {
             activeFloorSprawler.IsDepthFirst = currentCommand.isDepthFirst();
-            // 3.
-            int noRoomGeneratedCount = 0;
-            while (currentCommand.roomsLeft() > 0 && noRoomGeneratedCount < 10)
+        }
+
+        /// <summary>
+        /// Executes the command as many times the command demands.  If
+        /// the command unsuccessfully adds rooms too many times in a row,
+        /// it will terminate early.
+        /// </summary>
+        /// <returns>
+        /// True if the command executed successfully otherwise false if
+        /// it was terminated early because it reached the max number of
+        /// failed generations.
+        /// </returns>
+        private bool ExecuteCommandLoop()
+        {
+            int failedRoomGenerationAttempts = 0;
+            while (currentCommand.roomsLeft() > 0 && failedRoomGenerationAttempts < MAXIMUM_GENERATION_FAILS_BEFORE_COMMAND_IS_SKIPPED)
             {
-                // 4.
-                Room currentRoom = activeFloorSprawler.getNextRoom();
-                // 5.
-                if (currentCommand.shouldAlwaysBranchFromNewRoom())
+                int roomsGenerated = ExecuteCommandOnce();
+                roomsBuilt += roomsGenerated;
+                if (roomsGenerated == 0)
                 {
-                    activeFloorSprawler.removeNextRoom();
-                    activeFloorSprawler.addRoom(currentRoom);
+                    failedRoomGenerationAttempts++;
                 }
-                // 6.
-                Room[] roomsInPass = new Room[currentCommand.roomsInSinglePass()];
-                int roomsInArray = 0;
-                // 7.
-                if (currentCommand.shouldTryToBuildNorth() // 7a. Command to build north
-                    && !floorBeingBuilt.hasRoomAtCoords(currentRoom.X, currentRoom.Y + 1) // 7b. No room exists to north
-                    && (new Room()).setToNorthOf(currentRoom)) // 7c. Try to add room to the north
-                {
-                    // 7d.
-                    roomsInPass[roomsInArray] = currentRoom.North;
-                    roomsInArray++;
-                    // 7e.
-                    if (currentCommand.shouldAlwaysBranchFromNewRoom())
-                    {
-                        roomsInPass[roomsInArray].IsWall = tryForWallRoom(currentCommand);
-                        if (roomsInPass[roomsInArray].IsNotWall)
-                        {
-                            currentCommand.decrementRoomsLeft();
-                            activeFloorSprawler.addRoom(roomsInPass[roomsInArray]);
-                        }
-                        currentRoom = activeFloorSprawler.getNextRoom();
-                        activeFloorSprawler.removeNextRoom();
-                    }
-                }
-                if (currentCommand.shouldTryToBuildEast()
-                    && !floorBeingBuilt.hasRoomAtCoords(currentRoom.X + 1, currentRoom.Y)
-                    && (new Room()).setToEastOf(currentRoom))
-                {
-                    roomsInPass[roomsInArray] = currentRoom.East;
-                    roomsInArray++;
+            }
 
-                    if (currentCommand.shouldAlwaysBranchFromNewRoom())
-                    {
-                        roomsInPass[roomsInArray].IsWall = tryForWallRoom(currentCommand);
-                        if (roomsInPass[roomsInArray].IsNotWall)
-                        {
-                            currentCommand.decrementRoomsLeft();
-                            activeFloorSprawler.addRoom(roomsInPass[roomsInArray]);
-                        }
-                        currentRoom = activeFloorSprawler.getNextRoom();
-                        activeFloorSprawler.removeNextRoom();
-                    }
-                }
-                if (currentCommand.shouldTryToBuildSouth()
-                    && !floorBeingBuilt.hasRoomAtCoords(currentRoom.X, currentRoom.Y - 1)
-                    && (new Room()).setToSouthOf(currentRoom))
-                {
-                    roomsInPass[roomsInArray] = currentRoom.South;
-                    roomsInArray++;
+            return failedRoomGenerationAttempts < MAXIMUM_GENERATION_FAILS_BEFORE_COMMAND_IS_SKIPPED;
+        }
 
-                    if (currentCommand.shouldAlwaysBranchFromNewRoom())
-                    {
-                        roomsInPass[roomsInArray].IsWall = tryForWallRoom(currentCommand);
-                        if (roomsInPass[roomsInArray].IsNotWall)
-                        {
-                            currentCommand.decrementRoomsLeft();
-                            activeFloorSprawler.addRoom(roomsInPass[roomsInArray]);
-                        }
-                        currentRoom = activeFloorSprawler.getNextRoom();
-                        activeFloorSprawler.removeNextRoom();
-                    }
-                }
-                if (currentCommand.shouldTryToBuildWest()
-                    && !floorBeingBuilt.hasRoomAtCoords(currentRoom.X - 1, currentRoom.Y)
-                    && (new Room()).setToWestOf(currentRoom))
-                {
-                    roomsInPass[roomsInArray] = currentRoom.West;
-                    roomsInArray++;
+        /// <summary>
+        /// Performs a single execution or pass of
+        /// currentCommand.
+        /// </summary>
+        /// <returns>The number of non-wall rooms added
+        /// by the pass.</returns>
+        private int ExecuteCommandOnce()
+        {
+            Room roomToBuildFrom = GetRoomToBuildOnFromSprawler();
 
-                    if (currentCommand.shouldAlwaysBranchFromNewRoom())
-                    {
-                        roomsInPass[roomsInArray].IsWall = tryForWallRoom(currentCommand);
-                        if (roomsInPass[roomsInArray].IsNotWall)
-                        {
-                            currentCommand.decrementRoomsLeft();
-                            activeFloorSprawler.addRoom(roomsInPass[roomsInArray]);
-                        }
-                        currentRoom = activeFloorSprawler.getNextRoom();
-                        activeFloorSprawler.removeNextRoom();
-                    }
-                }
-                // 8.
-                if (!currentCommand.shouldAlwaysBranchFromNewRoom())
-                {
-                    // 8a.
-                    if (currentCommand.shouldShuffleThisPass())
-                    {
-                        roomsInPass = shuffleRoomArray(roomsInPass);
-                    }
-                    for (int i = 0; i < roomsInArray; i++)
-                    {
-                        // 8b.
-                        roomsInPass[i].IsWall = tryForWallRoom(currentCommand);
-                        // 8c.
-                        if (roomsInPass[i].IsNotWall)
-                        {
-                            // 8c1.
-                            currentCommand.decrementRoomsLeft();
-                            // 8c2.
-                            activeFloorSprawler.addRoom(roomsInPass[i]);
-                        }
-                    }   
-                }
+            List<Room> roomsInPass = BuildRoomsInPass(roomToBuildFrom);
+            
+            if (currentCommand.ShouldNotAlwaysBranchFromNewRoom())
+            {
+                roomsInPass = TryToShuffleRoomsInPass(roomsInPass);
+                FinalizeRoomsInPass(roomsInPass);
+            }
+            
+            if (currentCommand.shouldConnectNeighbors())
+            {
+                ConnectNeighbors(roomsInPass);
+            }
+            int roomsAdded = CountRoomsThatAreNotWalls(roomsInPass);
+            return roomsAdded;
+        }
 
-                // 9.
-                if(currentCommand.shouldConnectNeighbors())
+        /// <summary>
+        /// Counts the number of rooms in roomsInPass that
+        /// are not walls.
+        /// </summary>
+        /// <param name="roomsInPass"></param>
+        /// <returns>The number that aren't walls.</returns>
+        private int CountRoomsThatAreNotWalls(List<Room> roomsInPass)
+        {
+            int roomsThatAreNotWalls = 0;
+            foreach(Room room in roomsInPass)
+            {
+                if (room.IsNotWall)
+                    roomsThatAreNotWalls++;
+            }
+            return roomsThatAreNotWalls;
+        }
+
+        /// <summary>
+        /// Connects rooms that are adjacent to a room in
+        /// roomsInPass to that room.
+        /// </summary>
+        /// <param name="roomsInPass"></param>
+        private void ConnectNeighbors(List<Room> roomsInPass)
+        {
+            foreach (Room room in roomsInPass)
+            {
+                TryToConnectToNorth(room);
+                TryToConnectToEast(room);
+                TryToConnectToSouth(room);
+                TryToConnectToWest(room);
+            }
+        }
+
+        /// <summary>
+        /// Attempts to connect roomToConnectFrom to the room directly to
+        /// its north.  If no such room exists, no connection is made.  If
+        /// roomToConnectFrom is already connected to the north, nothing
+        /// is changed.
+        /// </summary>
+        /// <param name="roomToConnectFrom"></param>
+        private void TryToConnectToNorth(Room roomToConnectFrom)
+        {
+            if (roomToConnectFrom.North == null)
+            {
+                Room northNeighbor = floorBeingBuilt.getRoomToNorth(roomToConnectFrom);
+                if (northNeighbor != null)
                 {
-                    for(int i = 0; i < roomsInArray; i ++)
-                    {
-                        // 9a.
-                        if (roomsInPass[i].North == null)
-                        {
-                            // 9b.
-                            Room northNeighbor = floorBeingBuilt.getRoomToNorth(roomsInPass[i]);
-                            if (northNeighbor != null)
-                            {
-                                northNeighbor.setToNorthOf(roomsInPass[i]);
-                            }
-                        }
-                        if (roomsInPass[i].East == null)
-                        {
-                            Room northNeighbor = floorBeingBuilt.getRoomToEast(roomsInPass[i]);
-                            if (northNeighbor != null)
-                            {
-                                northNeighbor.setToEastOf(roomsInPass[i]);
-                            }
-                        }
-                        if (roomsInPass[i].South == null)
-                        {
-                            Room northNeighbor = floorBeingBuilt.getRoomToSouth(roomsInPass[i]);
-                            if (northNeighbor != null)
-                            {
-                                northNeighbor.setToSouthOf(roomsInPass[i]);
-                            }
-                        }
-                        if (roomsInPass[i].West == null)
-                        {
-                            Room northNeighbor = floorBeingBuilt.getRoomToWest(roomsInPass[i]);
-                            if (northNeighbor != null)
-                            {
-                                northNeighbor.setToWestOf(roomsInPass[i]);
-                            }
-                        }
-                    }
+                    northNeighbor.setToNorthOf(roomToConnectFrom);
                 }
             }
         }
 
-        private Room[] shuffleRoomArray(Room[] input)
+        /// <summary>
+        /// Attempts to connect roomToConnectFrom to the room directly to
+        /// its east.  If no such room exists, no connection is made.  If
+        /// roomToConnectFrom is already connected to the east, nothing
+        /// is changed.
+        /// </summary>
+        /// <param name="roomToConnectFrom"></param>
+        private void TryToConnectToEast(Room roomToConnectFrom)
         {
-            FloorSprawler temp = new FloorSprawler();
-            foreach(Room r in input)
+            if (roomToConnectFrom.East == null)
             {
-                if(r != null)
+                Room eastNeighbor = floorBeingBuilt.getRoomToEast(roomToConnectFrom);
+                if (eastNeighbor != null)
                 {
-                    temp.addRoom(r);
+                    eastNeighbor.setToEastOf(roomToConnectFrom);
                 }
             }
-            temp.shuffleRooms();
-            Room[] toReturn = new Room[temp.NumberOfRooms];
-            for(int i = 0; i < toReturn.Length; i++)
-            {
-                toReturn[i] = temp.removeNextRoom();
-            }
-            return null;
         }
 
-        private bool tryForWallRoom(GenerationCommand command)
+        /// <summary>
+        /// Attempts to connect roomToConnectFrom to the room directly to
+        /// its south.  If no such room exists, no connection is made.  If
+        /// roomToConnectFrom is already connected to the south, nothing
+        /// is changed.
+        /// </summary>
+        /// <param name="roomToConnectFrom"></param>
+        private void TryToConnectToSouth(Room roomToConnectFrom)
         {
-            return ((new Random()).NextDouble() < command.getWallChance());
+            if (roomToConnectFrom.South == null)
+            {
+                Room southNeighbor = floorBeingBuilt.getRoomToSouth(roomToConnectFrom);
+                if (southNeighbor != null)
+                {
+                    southNeighbor.setToSouthOf(roomToConnectFrom);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Attempts to connect roomToConnectFrom to the room directly to
+        /// its west.  If no such room exists, no connection is made.  If
+        /// roomToConnectFrom is already connected to the west, nothing
+        /// is changed.
+        /// </summary>
+        /// <param name="roomToConnectFrom"></param>
+        private void TryToConnectToWest(Room roomToConnectFrom)
+        {
+            if (roomToConnectFrom.East == null)
+            {
+                Room westNeighbor = floorBeingBuilt.getRoomToWest(roomToConnectFrom);
+                if (westNeighbor != null)
+                {
+                    westNeighbor.setToWestOf(roomToConnectFrom);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Finalizes every Room in roomsInPass List.
+        /// </summary>
+        /// <param name="roomsInPass"></param>
+        private void FinalizeRoomsInPass(List<Room> roomsInPass)
+        {
+            foreach (Room room in roomsInPass)
+            {
+                FinalizeAddingRoom(room);
+            }
+        }
+
+        /// <summary>
+        /// If currentCommand demands that passes should be shuffled,
+        /// it will reate a new List of type Room that contains the same
+        /// Room objects as roomsInPass.
+        /// </summary>
+        /// <param name="roomsInPass"></param>
+        /// <returns>A List of type Room in a different order than roomsInPass
+        /// if currentCommand specifies that passes should be shuffled.
+        /// Otherwise, return roomsInPass.</returns>
+        private List<Room> TryToShuffleRoomsInPass(List<Room> roomsInPass)
+        {
+            if (currentCommand.shouldShuffleThisPass())
+            {
+                return GetShuffledRoomArray(roomsInPass);
+            }
+
+            return roomsInPass;
+        }
+
+        /// <summary>
+        /// Generates appropriates rooms according to the
+        /// specifications of currentCommand.  This can result
+        /// in a maximum of four rooms being generated.  Also
+        /// uses the currentCommand to potentially turn some
+        /// or all of those rooms into wall pieces.  Rooms
+        /// that are turned into wall pieces are not added to
+        /// the floor sprawler, all others are.
+        /// </summary>
+        /// <param name="roomToBuildFrom"></param>
+        /// <returns>A List container of the rooms added to the
+        /// floor during this method call.  This includes wall
+        /// pieces.</returns>
+        private List<Room> BuildRoomsInPass(Room roomToBuildFrom)
+        {
+            List<Room> roomsToReturn = new List<Room>();
+
+            if (currentCommand.shouldTryToBuildNorth())
+            {
+                Room northRoom = BuildNorthRoom(roomToBuildFrom);
+                if (northRoom != null)
+                {
+                    if (currentCommand.shouldAlwaysBranchFromNewRoom())
+                    {
+                        FinalizeAddingRoom(northRoom);
+                        roomToBuildFrom = GetRoomToBuildOnFromSprawler();
+                    }
+                    roomsToReturn.Add(northRoom);
+                }
+            }
+
+            if (currentCommand.shouldTryToBuildEast())
+            {
+                Room eastRoom = BuildEastRoom(roomToBuildFrom);
+                if (eastRoom != null)
+                {
+                    if (currentCommand.shouldAlwaysBranchFromNewRoom())
+                    {
+                        FinalizeAddingRoom(eastRoom);
+                        roomToBuildFrom = GetRoomToBuildOnFromSprawler();
+                    }
+                    roomsToReturn.Add(eastRoom);
+                }
+            }
+
+            if (currentCommand.shouldTryToBuildSouth())
+            {
+                Room southRoom = BuildSouthRoom(roomToBuildFrom);
+                if (southRoom != null)
+                {
+                    if (currentCommand.shouldAlwaysBranchFromNewRoom())
+                    {
+                        FinalizeAddingRoom(southRoom);
+                        roomToBuildFrom = GetRoomToBuildOnFromSprawler();
+                    }
+                    roomsToReturn.Add(southRoom);
+                }
+            }
+
+            if (currentCommand.shouldTryToBuildWest())
+            {
+                Room westRoom = BuildWestRoom(roomToBuildFrom);
+                if (westRoom != null)
+                {
+                    if (currentCommand.shouldAlwaysBranchFromNewRoom())
+                    {
+                        FinalizeAddingRoom(westRoom);
+                        roomToBuildFrom = GetRoomToBuildOnFromSprawler();
+                    }
+                    roomsToReturn.Add(westRoom);
+                }
+            }
+
+            return roomsToReturn;
+        }
+
+        /// <summary>
+        /// Potentially turns this room into a wall based
+        /// on specification from currentCommand.  Rooms
+        /// that are not turned into walls are added to
+        /// activeFloorSprawler and are counted toward the
+        /// number of rooms created by currentCommand.
+        /// </summary>
+        /// <param name="roomToFinalize"></param>
+        private void FinalizeAddingRoom(Room roomToFinalize)
+        {
+            roomToFinalize.IsWall = TryForWallRoom();
+            if (roomToFinalize.IsNotWall)
+            {
+                currentCommand.decrementRoomsLeft();
+                activeFloorSprawler.addRoom(roomToFinalize);
+            }
+        }
+
+        /// <summary>
+        /// Will attempt to create a new room to the north of 
+        /// the roomToBuildFrom.  If a room already exists at
+        /// the coordinate to the north of roomToBuildFrom,
+        /// no room will be added.
+        /// </summary>
+        /// <param name="roomToBuildFrom"></param>
+        /// <returns>A room connected to the north of
+        /// roomtoBuildFrom if one does not exist at that location.
+        /// Otherwise, returns null.</returns>
+        private Room BuildNorthRoom(Room roomToBuildFrom)
+        {
+            Room northRoom = null;
+            bool connectionWasSuccessful = false;
+
+            if (floorBeingBuilt.doesNotHaveRoomAtCoords(roomToBuildFrom.X, roomToBuildFrom.Y + 1))
+            {
+                northRoom = new Room();
+                connectionWasSuccessful = northRoom.setToNorthOf(roomToBuildFrom);
+            }
+            if (connectionWasSuccessful)
+                return northRoom;
+            else
+                return null;
+        }
+
+        /// <summary>
+        /// Will attempt to create a new room to the east of 
+        /// the roomToBuildFrom.  If a room already exists at
+        /// the coordinate to the east of roomToBuildFrom,
+        /// no room will be added.
+        /// </summary>
+        /// <param name="roomToBuildFrom"></param>
+        /// <returns>A room connected to the east of
+        /// roomtoBuildFrom if one does not exist at that location.
+        /// Otherwise, returns null.</returns>
+        private Room BuildEastRoom(Room roomToBuildFrom)
+        {
+            Room eastRoom = null;
+            bool connectionWasSuccessful = false;
+
+            if (floorBeingBuilt.doesNotHaveRoomAtCoords(roomToBuildFrom.X + 1, roomToBuildFrom.Y))
+            {
+                eastRoom = new Room();
+                connectionWasSuccessful = eastRoom.setToEastOf(roomToBuildFrom);
+            }
+            if (connectionWasSuccessful)
+                return eastRoom;
+            else
+                return null;
+        }
+
+        /// <summary>
+        /// Will attempt to create a new room to the south of 
+        /// the roomToBuildFrom.  If a room already exists at
+        /// the coordinate to the south of roomToBuildFrom,
+        /// no room will be added.
+        /// </summary>
+        /// <param name="roomToBuildFrom"></param>
+        /// <returns>A room connected to the south of
+        /// roomtoBuildFrom if one does not exist at that location.
+        /// Otherwise, returns null.</returns>
+        private Room BuildSouthRoom(Room roomToBuildFrom)
+        {
+            Room southRoom = null;
+            bool connectionWasSuccessful = false;
+
+            if (floorBeingBuilt.doesNotHaveRoomAtCoords(roomToBuildFrom.X, roomToBuildFrom.Y - 1))
+            {
+                southRoom = new Room();
+                connectionWasSuccessful = southRoom.setToSouthOf(roomToBuildFrom);
+            }
+            if (connectionWasSuccessful)
+                return southRoom;
+            else
+                return null;
+        }
+
+        /// <summary>
+        /// Will attempt to create a new room to the west of 
+        /// the roomToBuildFrom.  If a room already exists at
+        /// the coordinate to the west of roomToBuildFrom,
+        /// no room will be added.
+        /// </summary>
+        /// <param name="roomToBuildFrom"></param>
+        /// <returns>A room connected to the west of
+        /// roomtoBuildFrom if one does not exist at that location.
+        /// Otherwise, returns null.</returns>
+        private Room BuildWestRoom(Room roomToBuildFrom)
+        {
+            Room westRoom = null;
+            bool connectionWasSuccessful = false;
+
+            if (floorBeingBuilt.doesNotHaveRoomAtCoords(roomToBuildFrom.X - 1, roomToBuildFrom.Y))
+            {
+                westRoom = new Room();
+                connectionWasSuccessful = westRoom.setToWestOf(roomToBuildFrom);
+            }
+            if (connectionWasSuccessful)
+                return westRoom;
+            else
+                return null;
+        }
+
+        /// <summary>
+        /// Retrieve the next room to be added to.  This room is guaranteeed
+        /// to have at least one open side, but not guaranteed that the current
+        /// command will try to add onto.  If the current command demands that
+        /// all the floorsprawler always branches from a new room, it will move 
+        /// the selected room to the end of the floorsprawler.  When the sprawl
+        /// type is depth first this feature essentially does nothing.
+        /// </summary>
+        /// <returns>The room to build off from.</returns>
+        private Room GetRoomToBuildOnFromSprawler()
+        {
+            Room roomToReturn = activeFloorSprawler.getNextRoom();
+
+            if (currentCommand.shouldAlwaysBranchFromNewRoom())
+            {
+                activeFloorSprawler.removeNextRoom();
+                activeFloorSprawler.addRoom(roomToReturn);
+            }
+            return roomToReturn;
+        }
+
+        /// <summary>
+        /// Changes the order of input by adding the Room
+        /// objects to a temporary FloorSprawler and using
+        /// the shuffleRooms method of that class.  Returns
+        /// as a new object.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns>A List of type Room where the order is
+        /// different than the order within input.</returns>
+        private List<Room> GetShuffledRoomArray(List<Room> input)
+        {
+            FloorSprawler tempSprawler = new FloorSprawler();
+            foreach (Room r in input)
+            {
+                if (r != null)
+                {
+                    tempSprawler.addRoom(r);
+                }
+            }
+            tempSprawler.shuffleRooms();
+            List<Room> toReturn = new List<Room>();
+            while(tempSprawler.HasNextRoom)
+            {
+                toReturn.Add(tempSprawler.removeNextRoom());
+            }
+            return toReturn;
+        }
+
+        /// <summary>
+        /// Returns true with the percentage specified by
+        /// currentCommand.
+        /// </summary>
+        /// <returns></returns>
+        private bool TryForWallRoom()
+        {
+            return ((new Random()).NextDouble() < currentCommand.getWallChance());
         }
     }
 }

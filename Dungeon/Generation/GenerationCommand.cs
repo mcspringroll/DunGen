@@ -78,6 +78,15 @@ namespace DungeonAPI.Generation
         }
 
         /// <summary>
+        /// Get, remove, and add rooms to end at end of pass.
+        /// </summary>
+        /// <returns></returns>
+        public bool ShouldNotAlwaysBranchFromNewRoom()
+        {
+            return !shouldAlwaysBranchFromNewRoom();
+        }
+
+        /// <summary>
         /// Randomize all stored rooms in sprawler.
         /// </summary>
         /// <returns></returns>

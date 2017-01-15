@@ -22,6 +22,11 @@ namespace DungeonAPI.Definitions
             //build dungeon here, lol
         }
 
+        public bool doesNotHaveRoomAtCoords(int x, int y)
+        {
+            return !hasRoomAtCoords(x, y);
+        }
+
         public bool hasRoomAtCoords(int x, int y)
         {
             return getRoomAtCoords(x, y) != null;
