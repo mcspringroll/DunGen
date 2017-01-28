@@ -20,6 +20,14 @@ namespace DungeonAPI.Definitions
         public bool IsConnectedToSouth { get; set; }
         public bool IsConnectedToWest { get; set; }
 
+        public bool HasAllNeighbors
+        {
+            get
+            {
+                return North != null && East != null && South != null && West != null;
+            }
+        }
+
         public List<Item> Items { get; set; }
         public List<Enemy> Enemies { get; set; }
         public int X { get; private set; }
@@ -63,53 +71,45 @@ namespace DungeonAPI.Definitions
         #region SetConnectionMethods
         public bool setToNorthOf(Room southernRoom)
         {
-            if (southernRoom.North != null || this.South != null)
+            if (southernRoom == null || southernRoom.North != null || this.South != null)
                 return false;
             southernRoom.North = this;
             this.South = southernRoom;
             this.X = southernRoom.X;
             this.Y = southernRoom.Y + 1;
-            this.IsConnectedToSouth = true;
-            southernRoom.IsConnectedToNorth = true;
             return true;
         }
 
         public bool setToEastOf(Room westernRoom)
         {
-            if (westernRoom.East != null || this.West != null)
+            if (westernRoom == null || westernRoom.East != null || this.West != null)
                 return false;
             westernRoom.East = this;
             this.West = westernRoom;
             this.X = westernRoom.X + 1;
             this.Y = westernRoom.Y;
-            this.IsConnectedToWest = true;
-            westernRoom.IsConnectedToEast = true;
             return true;
         }
 
         public bool setToSouthOf(Room northernRoom)
         {
-            if (northernRoom.South != null || this.North != null)
+            if (northernRoom == null || northernRoom.South != null || this.North != null)
                 return false;
             northernRoom.South = this;
             this.North = northernRoom;
             this.X = northernRoom.X;
             this.Y = northernRoom.Y - 1;
-            this.IsConnectedToNorth = true;
-            northernRoom.IsConnectedToSouth = true;
             return true;
         }
 
         public bool setToWestOf(Room easternRoom)
         {
-            if (easternRoom.West != null || this.East != null)
+            if (easternRoom == null || easternRoom.West != null || this.East != null)
                 return false;
             easternRoom.West = this;
             this.East = easternRoom;
             this.X = easternRoom.X - 1;
             this.Y = easternRoom.Y;
-            this.IsConnectedToEast = true;
-            easternRoom.IsConnectedToWest = true;
             return true;
         }
         #endregion

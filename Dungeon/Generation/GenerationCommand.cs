@@ -14,18 +14,18 @@ namespace DungeonAPI.Generation
     public sealed class GenerationCommand
     {
         private const byte
-            MASK_REPETITIONS = 0xf0, //1111 0000
-            MASK_DIRECTIONS = 0x0f, //0000 1111
-            MASK_NORTH = 0x08, //0000 1000
-            MASK_EAST = 0x04, //0000 0100
-            MASK_SOUTH = 0x02, //0000 0010
-            MASK_WEST = 0x01, //0000 0001
-            MASK_CONTROLLER_DEPTH_FIRST = 0x80, //1000 0000
-            MASK_CONTROLLER_SHUFFLE = 0x40, //0100 0000
-            MASK_CONTROLLER_SHUFFLE_ROOMS = 0x20, //0010 0000
-            MASK_CONTROLLER_TOGGLE_DEPTH_FIRST = 0x10, //0001 0000
-            MASK_CONTROLLER_CONNECT_NEIGHBORS = 0x08,  //0000 1000
-            MASK_CONTROLLER_ALWAYS_NEW_ROOM = 0x04, //0000 0100
+            MASK_REPETITIONS = 0xf0,    //1111 0000
+            MASK_DIRECTIONS = 0x0f,     //0000 1111
+            MASK_NORTH = 0x08,          //0000 1000
+            MASK_EAST = 0x04,           //0000 0100
+            MASK_SOUTH = 0x02,          //0000 0010
+            MASK_WEST = 0x01,           //0000 0001
+            MASK_CONTROLLER_DEPTH_FIRST = 0x80,         //1000 0000
+            MASK_CONTROLLER_SHUFFLE = 0x40,             //0100 0000
+            MASK_CONTROLLER_SHUFFLE_ROOMS = 0x20,       //0010 0000
+            MASK_CONTROLLER_TOGGLE_DEPTH_FIRST = 0x10,  //0001 0000
+            MASK_CONTROLLER_CONNECT_NEIGHBORS = 0x08,   //0000 1000
+            MASK_CONTROLLER_ALWAYS_NEW_ROOM = 0x04,     //0000 0100
             MASK_CONTROLLER_MSI = 0x00, //???
             MASK_CONTROLLER_LSI = 0x00, //???
             MASK_CONTROLLER_LSB = 0x00; //???
@@ -38,7 +38,7 @@ namespace DungeonAPI.Generation
 
         private bool roomsDepleted;
 
-        private byte RoomsLeft { get; set; }
+        public byte RoomsLeft { get; private set; }
 
         public GenerationCommand(uint segmentValue)
         {
@@ -47,7 +47,7 @@ namespace DungeonAPI.Generation
             wallChance = segmentBytes[1];
             controllerMSB = segmentBytes[2];
             controllerLSB = segmentBytes[3];
-            resetRoomsLeft();
+            ResetRoomsLeft();
         }
 
         /// <summary>
@@ -125,15 +125,6 @@ namespace DungeonAPI.Generation
         }
 
         /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public int roomsLeft()
-        {
-            return (int)RoomsLeft;
-        }
-
-        /// <summary>
         /// If this command should allow trying to build to the north.
         /// </summary>
         /// <returns></returns>
@@ -194,9 +185,9 @@ namespace DungeonAPI.Generation
                     roomsDepleted = true;
         }
 
-        public void resetRoomsLeft()
+        public void ResetRoomsLeft()
         {
-            RoomsLeft = (byte)(repetitionsAndDirections & MASK_REPETITIONS);
+            RoomsLeft = (byte)((repetitionsAndDirections & MASK_REPETITIONS) >> 4);
             roomsDepleted = false;
         }
 

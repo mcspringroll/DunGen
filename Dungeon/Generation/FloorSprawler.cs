@@ -147,6 +147,9 @@ namespace DungeonAPI.Generation
         /// <param name="toAdd"></param>
         public void addRoom(Room toAdd)
         {
+            if (toAdd == null)
+                return;
+
             Node temp = new Node();
             temp.Data = toAdd;
             NumberOfRooms++;
@@ -161,6 +164,52 @@ namespace DungeonAPI.Generation
                 EndNode = temp;
             }
         }
+
+        public void RemoveLockedRooms()
+        {
+            Node currentRoomNode = FrontNode;
+            while (currentRoomNode != null)
+            {
+                if (currentRoomNode.Data.HasAllNeighbors)
+                {
+                    Node previousNode = currentRoomNode.Previous;
+                    Node nextNode = currentRoomNode.Next;
+
+                    if (nextNode != null)
+                    {
+                        nextNode.Previous = previousNode;
+                    }
+                    else //is the end node
+                    {
+                        EndNode = previousNode;
+                        if (EndNode == null || EndNode.Previous == null)
+                        {
+                            FrontNode = EndNode;
+                        }
+                    }
+                    if (previousNode != null)
+                    {
+                        previousNode.Next = nextNode;
+                    }
+                    else
+                    {
+                        FrontNode = nextNode;
+                        if (FrontNode == null || FrontNode.Next == null)
+                        {
+                            EndNode = FrontNode;
+                        }
+                    }
+                    if (nextNode == null && previousNode == null)
+                    {
+                        FrontNode = EndNode = null;
+                    }
+
+                    NumberOfRooms--;
+                }
+                currentRoomNode = currentRoomNode.Next;
+            }
+        }
+
 
         /// <summary>
         /// Takes all rooms in this FloorSprawler and
@@ -201,6 +250,7 @@ namespace DungeonAPI.Generation
             }
             this.FrontNode = newSprawler.FrontNode;
             this.EndNode = newSprawler.EndNode;
+            this.NumberOfRooms = newSprawler.NumberOfRooms;
             this.IsDepthFirst = originalDepthFirstValue;
         }
 
@@ -232,6 +282,8 @@ namespace DungeonAPI.Generation
         /// </summary>
         private class Node
         {
+            public Node() { }
+
             /// <summary>
             /// The node "in front of" this node.
             /// </summary>
