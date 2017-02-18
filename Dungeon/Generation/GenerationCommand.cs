@@ -42,7 +42,7 @@ namespace DungeonAPI.Generation
 
         public GenerationCommand(uint segmentValue)
         {
-            byte[] segmentBytes = toByteArray(segmentValue);
+            byte[] segmentBytes = ToByteArray(segmentValue);
             repetitionsAndDirections = segmentBytes[0];
             wallChance = segmentBytes[1];
             controllerMSB = segmentBytes[2];
@@ -54,63 +54,84 @@ namespace DungeonAPI.Generation
         /// Controls type of sprawl.
         /// </summary>
         /// <returns></returns>
-        public bool isDepthFirst()
+        public bool IsDepthFirst
         {
-            return (controllerMSB & MASK_CONTROLLER_DEPTH_FIRST) == MASK_CONTROLLER_DEPTH_FIRST;
+            get
+            {
+                return (controllerMSB & MASK_CONTROLLER_DEPTH_FIRST) == MASK_CONTROLLER_DEPTH_FIRST;
+            }
         }
 
         /// <summary>
         /// Controls type of sprawl.
         /// </summary>
         /// <returns></returns>
-        public bool isBreadthFirst()
+        public bool IsBreadthFirst
         {
-            return !isDepthFirst();
+            get
+            {
+                return !IsDepthFirst;
+            }
         }
 
         /// <summary>
         /// Get, remove, and add rooms to end everytime, not just at end of pass.
         /// </summary>
         /// <returns></returns>
-        public bool shouldAlwaysBranchFromNewRoom()
+        public bool ShouldAlwaysBranchFromNewRoom
         {
-            return (controllerMSB & MASK_CONTROLLER_ALWAYS_NEW_ROOM) == MASK_CONTROLLER_ALWAYS_NEW_ROOM;
+            get
+            {
+                return (controllerMSB & MASK_CONTROLLER_ALWAYS_NEW_ROOM) == MASK_CONTROLLER_ALWAYS_NEW_ROOM;
+            }
         }
 
         /// <summary>
         /// Get, remove, and add rooms to end at end of pass.
         /// </summary>
         /// <returns></returns>
-        public bool ShouldNotAlwaysBranchFromNewRoom()
+        public bool ShouldNotAlwaysBranchFromNewRoom
         {
-            return !shouldAlwaysBranchFromNewRoom();
+            get
+            {
+                return !ShouldAlwaysBranchFromNewRoom;
+            }
         }
 
         /// <summary>
         /// Randomize all stored rooms in sprawler.
         /// </summary>
         /// <returns></returns>
-        public bool shuffleAfterPass()
+        public bool ShouldShuffleAfterPass
         {
-            return (controllerMSB & MASK_CONTROLLER_SHUFFLE) == MASK_CONTROLLER_SHUFFLE;
+            get
+            {
+                return (controllerMSB & MASK_CONTROLLER_SHUFFLE) == MASK_CONTROLLER_SHUFFLE;
+            }
         }
 
         /// <summary>
         /// Randomize rooms before adding them to sprawler.
         /// </summary>
         /// <returns></returns>
-        public bool shouldShuffleThisPass()
+        public bool ShouldShuffleThisPass
         {
-            return (controllerMSB & MASK_CONTROLLER_SHUFFLE_ROOMS) == MASK_CONTROLLER_SHUFFLE_ROOMS;
+            get
+            {
+                return (controllerMSB & MASK_CONTROLLER_SHUFFLE_ROOMS) == MASK_CONTROLLER_SHUFFLE_ROOMS;
+            }
         }
 
         /// <summary>
         /// Switch between sprawl type after a pass is completed.
         /// </summary>
         /// <returns></returns>
-        public bool flipDepthOrBreadthFirstAfterPass()
+        public bool ShouldFlipDepthOrBreadthFirstAfterPass
         {
-            return (controllerMSB & MASK_CONTROLLER_TOGGLE_DEPTH_FIRST) == MASK_CONTROLLER_TOGGLE_DEPTH_FIRST;
+            get
+            {
+                return (controllerMSB & MASK_CONTROLLER_TOGGLE_DEPTH_FIRST) == MASK_CONTROLLER_TOGGLE_DEPTH_FIRST;
+            }
         }
 
         /// <summary>
@@ -119,64 +140,85 @@ namespace DungeonAPI.Generation
         /// the room that branched to create them.
         /// </summary>
         /// <returns></returns>
-        public bool shouldConnectNeighbors()
+        public bool ShouldConnectNeighbors
         {
-            return (controllerMSB & MASK_CONTROLLER_CONNECT_NEIGHBORS) == MASK_CONTROLLER_CONNECT_NEIGHBORS;
+            get
+            {
+                return (controllerMSB & MASK_CONTROLLER_CONNECT_NEIGHBORS) == MASK_CONTROLLER_CONNECT_NEIGHBORS;
+            }
         }
 
         /// <summary>
         /// If this command should allow trying to build to the north.
         /// </summary>
         /// <returns></returns>
-        public bool shouldTryToBuildNorth()
+        public bool ShouldTryToBuildNorth
         {
-            return (repetitionsAndDirections & MASK_NORTH) == MASK_NORTH;
+            get
+            {
+                return (repetitionsAndDirections & MASK_NORTH) == MASK_NORTH;
+            }
         }
 
         /// <summary>
         /// If this command should allow trying to build to the east.
         /// </summary>
         /// <returns></returns>
-        public bool shouldTryToBuildEast()
+        public bool ShouldTryToBuildEast
         {
-            return (repetitionsAndDirections & MASK_EAST) == MASK_EAST;
+            get
+            {
+                return (repetitionsAndDirections & MASK_EAST) == MASK_EAST;
+            }
         }
         
         /// <summary>
         /// If this command should allow trying to build to the south.
         /// </summary>
         /// <returns></returns>
-        public bool shouldTryToBuildSouth()
+        public bool ShouldTryToBuildSouth
         {
-            return (repetitionsAndDirections & MASK_SOUTH) == MASK_SOUTH;
+            get
+            {
+                return (repetitionsAndDirections & MASK_SOUTH) == MASK_SOUTH;
+            }
         }
 
-        public bool shouldTryToBuildWest()
+        public bool ShouldTryToBuildWest
         {
-            return (repetitionsAndDirections & MASK_WEST) == MASK_WEST;
+            get
+            {
+                return (repetitionsAndDirections & MASK_WEST) == MASK_WEST;
+            }
         }
 
-        public int roomsInSinglePass()
+        public int NumberOfRoomsInSinglePass
         {
-            return roomsInSinglePassAsString().Length;
+            get
+            {
+                return RoomsInSinglePassAsString.Length;
+            }
         }
 
-        public string roomsInSinglePassAsString()
+        public string RoomsInSinglePassAsString
         {
-            string toReturn = "";
-            if (shouldTryToBuildNorth())
-                toReturn += 'N';
-            if (shouldTryToBuildEast())
-                toReturn += 'E';
-            if (shouldTryToBuildSouth())
-                toReturn += 'S';
-            if (shouldTryToBuildWest())
-                toReturn += 'W';
+            get
+            {
+                string toReturn = "";
+                if (ShouldTryToBuildNorth)
+                    toReturn += 'N';
+                if (ShouldTryToBuildEast)
+                    toReturn += 'E';
+                if (ShouldTryToBuildSouth)
+                    toReturn += 'S';
+                if (ShouldTryToBuildWest)
+                    toReturn += 'W';
 
-            return toReturn;
+                return toReturn;
+            }
         }
 
-        public void decrementRoomsLeft()
+        public void DecrementRoomsLeft()
         {
             if (!roomsDepleted)
                 if (RoomsLeft > 0)
@@ -191,7 +233,7 @@ namespace DungeonAPI.Generation
             roomsDepleted = false;
         }
 
-        private byte[] toByteArray(uint val)
+        private byte[] ToByteArray(uint val)
         {
             byte[] bytes = BitConverter.GetBytes(val);
             if (BitConverter.IsLittleEndian)
@@ -199,12 +241,15 @@ namespace DungeonAPI.Generation
             return bytes;
         }
 
-        public double getWallChance()
+        public double WallChance
         {
-            return wallChance / 512.0;
+            get
+            {
+                return wallChance / 512.0;
+            }
         }
 
-        internal static GenerationCommand[] parseArray(uint[] commands)
+        internal static GenerationCommand[] ParseArray(uint[] commands)
         {
             GenerationCommand[] toReturn = new GenerationCommand[commands.Length];
             for (int i = 0; i < commands.Length; i++)

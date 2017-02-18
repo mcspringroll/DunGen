@@ -234,19 +234,24 @@ namespace DungeonAPI.Generation
             FloorSprawler newSprawler = new FloorSprawler();
             Byte decisionByte = randomByte();
             bool originalDepthFirstValue = this.IsDepthFirst;
-
+            int i = 0;
             while (this.FrontNode != null)
             {
-                //since this always resets i to 0, always checks the 1st bit of the random byte
-                //which renders that entirely pointless.  Should be refactored or just replaced
-                //with a constant.
-                int i = 0;
-
-                //Pull from front or back, as specified by the ith bit of a random byte
+                /*Though there is method call overhead here and more visible code that
+                * needs to run, using the ithBitEqualsOne method appears to be faster
+                * on large sets than the simpler solution of:
+                *     (new Random()).Next(2) == 0;
+                * Having it iterate through decisionByte until it runs out of space
+                * also appears to be significantly faster as well.
+                */
                 this.IsDepthFirst = ithBitEqualsOne(decisionByte, i++);
                 
                 newSprawler.addRoom(this.removeNextRoom());
-                decisionByte = randomByte();
+                if (i == 8)//8 should probably be wrapped in a constant
+                {
+                    decisionByte = randomByte();
+                    i = 0;
+                }
             }
             this.FrontNode = newSprawler.FrontNode;
             this.EndNode = newSprawler.EndNode;

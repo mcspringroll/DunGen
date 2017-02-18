@@ -62,54 +62,54 @@ namespace DungeonAPI.Definitions
         }
         #endregion
 
-        public Room()
+        public Room() : this(0,0)
+        { }
+
+        public Room(int x, int y)
         {
-            this.X = 0;
-            this.Y = 0;
+            this.X = x;
+            this.Y = y;
+        }
+
+        public long GetKeyValue()
+        {
+            return (((long)X) << 32) + Y;
         }
 
         #region SetConnectionMethods
-        public bool setToNorthOf(Room southernRoom)
+        public bool SetToNorthOf(Room southernRoom)
         {
             if (southernRoom == null || southernRoom.North != null || this.South != null)
                 return false;
             southernRoom.North = this;
             this.South = southernRoom;
-            this.X = southernRoom.X;
-            this.Y = southernRoom.Y + 1;
             return true;
         }
 
-        public bool setToEastOf(Room westernRoom)
+        public bool SetToEastOf(Room westernRoom)
         {
             if (westernRoom == null || westernRoom.East != null || this.West != null)
                 return false;
             westernRoom.East = this;
             this.West = westernRoom;
-            this.X = westernRoom.X + 1;
-            this.Y = westernRoom.Y;
             return true;
         }
 
-        public bool setToSouthOf(Room northernRoom)
+        public bool SetToSouthOf(Room northernRoom)
         {
             if (northernRoom == null || northernRoom.South != null || this.North != null)
                 return false;
             northernRoom.South = this;
             this.North = northernRoom;
-            this.X = northernRoom.X;
-            this.Y = northernRoom.Y - 1;
             return true;
         }
 
-        public bool setToWestOf(Room easternRoom)
+        public bool SetToWestOf(Room easternRoom)
         {
             if (easternRoom == null || easternRoom.West != null || this.East != null)
                 return false;
             easternRoom.West = this;
             this.East = easternRoom;
-            this.X = easternRoom.X - 1;
-            this.Y = easternRoom.Y;
             return true;
         }
         #endregion

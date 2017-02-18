@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using DungeonAPI.Generation;
 using DungeonAPI.Definitions;
+using DungeonAPI.Exceptions;
 
 namespace DungeonVisualizer
 {
@@ -12,20 +9,49 @@ namespace DungeonVisualizer
     {
         static void Main(string[] args)
         {
-            uint[] buildCommands = new uint[1];
-            //buildCommands[0] = 0x28008000;
-            //buildCommands[1] = 0x22008000;
-            //buildCommands[2] = 0x44008000;
+            uint[] buildCommands = new uint[8];
+            buildCommands[0] = 0x28008000;
+            buildCommands[1] = 0x22008000;
+            buildCommands[2] = 0x44008000;
 
 
-            buildCommands[0] = 0xFFFFC400;
+            //buildCommands[0] = 0xFFFFC400;
 
 
             //buildCommands[0] = 0xFF000000;
-            FloorGenerator generator = new FloorGenerator(buildCommands, 500);
+
+
+            /*buildCommands[0] = 0x48008000;
+            buildCommands[1] = 0x2FF04400;
+            buildCommands[2] = 0x42008000;
+            buildCommands[3] = 0x2FF04400;
+            buildCommands[4] = 0x42008000;
+            buildCommands[5] = 0x2FF04400;
+            buildCommands[6] = 0x41008000;
+            buildCommands[7] = 0x2FF06400;*/
+
+            FloorGenerator generator = new FloorGenerator(buildCommands, 100000);
+            bool noSuccess = true;
+            while (noSuccess)
+            {
+                try
+                {
+                    generator.GenerateFloor();
+                    noSuccess = false;
+                }
+                catch (NoRoomsToGenerateFromException)
+                {
+                    Console.WriteLine("Generation stopped because no more rooms were able to be added.");
+                    Floor failedFloor = generator.GetFloor();
+                    Room[,] roomsOfFailedFloor = SendFloorToArray(failedFloor);
+                    PrintRooms(roomsOfFailedFloor, failedFloor.RoomCount, buildCommands, false);
+                    generator.Reset();
+                }
+            }
+            Console.WriteLine("Success!");
             Floor floor = generator.GetFloor();
             Room[,] rooms = SendFloorToArray(floor);
-            PrintRooms(rooms);
+            PrintRooms(rooms, floor.RoomCount, buildCommands, true);
         }
 
         private static Room[,] SendFloorToArray(Floor floorToConvert)
@@ -39,7 +65,7 @@ namespace DungeonVisualizer
 
             Room[,] rooms = new Room[height, width];
 
-            foreach(Room r in floorToConvert.GetRooms())
+            foreach (Room r in floorToConvert.GetRooms())
             {
                 rooms[height - 1 - (r.Y - smallestY), r.X - smallestX] = r;
             }
@@ -47,20 +73,33 @@ namespace DungeonVisualizer
             return rooms;
         }
 
-        private static void PrintRooms(Room[,] rooms)
+        private static void PrintRooms(Room[,] rooms, int numberOfRooms, uint[] commands, bool success)
         {
-            Console.SetWindowSize(200, 60);
-            Console.WriteLine();
-            for (int row = 0; row < rooms.GetLength(0); row++)
+            string path = System.Reflection.Assembly.GetExecutingAssembly().Location + "\\..\\Rooms";
+            try
             {
-                for (int col = 0; col < rooms.GetLength(1); col++)
+                System.IO.Directory.CreateDirectory(path);
+            }
+            catch (Exception) { }
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter((path + "\\" + (success ? "successful" : "unsuccessful") + "Room" + (new Random()).Next() + ".txt")))
+            {
+                file.WriteLine("This floor has " + numberOfRooms + " rooms (counting walls) and was created " + (success ? "successfully" : "unsuccessfully") + " for this sequence of commands:\n");
+                foreach (uint command in commands)
+                    file.WriteLine(command);
+                file.WriteLine("\n\n\n\n");
+                for (int row = 0; row < rooms.GetLength(0); row++)
                 {
-                    if (rooms[row, col] == null || rooms[row, col].IsWall)
-                        Console.Write("   ");
-                    else
-                        Console.Write("[ ]");
+                    for (int col = 0; col < rooms.GetLength(1); col++)
+                    {
+                        if (rooms[row, col] == null)
+                            file.Write("  ");
+                        else if (rooms[row, col].IsWall)
+                            file.Write("()");
+                        else
+                            file.Write("[]");
+                    }
+                    file.Write('\n');
                 }
-                Console.Write('\n');
             }
         }
     }

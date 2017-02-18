@@ -9,19 +9,16 @@ namespace DungeonAPI.Definitions
     public class Floor
     {
         public const int DEFAULT_ROOMS_FOR_FLOOR = 50;
-
-        public Floor() : this(DEFAULT_ROOMS_FOR_FLOOR)
-        {}
-
-        public Floor(int numberOfRoomsToBuild)
+        
+        public Floor()
         {
             CurrentRoom = StartRoom = new Room();
-            allRooms = new HashSet<Room>();
-            allRooms.Add(CurrentRoom);
-            RoomCount = numberOfRoomsToBuild;
+            allRooms = new Dictionary<long, Room>();
+            RoomCount = 0;
+            AddRoom(CurrentRoom);
         }
 
-        private HashSet<Room> allRooms;
+        private Dictionary<long, Room> allRooms;
 
         public Room StartRoom { get; private set; }
 
@@ -34,18 +31,7 @@ namespace DungeonAPI.Definitions
         {
             get
             {
-                int smallestX = 0,
-                        largestX = 0;
-
-                foreach (Room r in allRooms)
-                {
-                    if (r.X < smallestX)
-                        smallestX = r.X;
-                    if (r.X > largestX)
-                        largestX = r.X;
-                }
-
-                int distance = largestX - smallestX;
+                int distance = LargestX - SmallestX;
 
                 return distance + 1;
             }
@@ -55,93 +41,30 @@ namespace DungeonAPI.Definitions
         {
             get
             {
-                int smallestY = 0,
-                        largestY = 0;
-
-                foreach (Room r in allRooms)
-                {
-                    if (r.Y < smallestY)
-                        smallestY = r.Y;
-                    if (r.Y > largestY)
-                        largestY = r.Y;
-                }
-
-                int distance = largestY - smallestY;
+                int distance = LargestY - SmallestY;
 
                 return distance + 1;
             }
         }
 
-        public int SmallestX
+        public int SmallestX { get; private set; }
+
+        public int SmallestY { get; private set; }
+
+        public int LargestX { get; private set; }
+
+        public int LargestY { get; private set; }
+
+        private void UpdateExtremes(int newX, int newY)
         {
-            get
-            {
-                int smallestX = 0;
-
-                foreach (Room r in allRooms)
-                {
-                    if (r.X < smallestX)
-                    {
-                        smallestX = r.X;
-                    }
-                }
-
-                return smallestX;
-            }
-        }
-
-        public int SmallestY
-        {
-            get
-            {
-                int smallestY = 0;
-
-                foreach (Room r in allRooms)
-                {
-                    if (r.Y < smallestY)
-                    {
-                        smallestY = r.Y;
-                    }
-                }
-
-                return smallestY;
-            }
-        }
-
-        public int LargestX
-        {
-            get
-            {
-                int largestX = 0;
-
-                foreach (Room r in allRooms)
-                {
-                    if (r.X > largestX)
-                    {
-                        largestX = r.X;
-                    }
-                }
-
-                return largestX;
-            }
-        }
-
-        public int LargestY
-        {
-            get
-            {
-                int largestY = 0;
-
-                foreach (Room r in allRooms)
-                {
-                    if (r.Y > largestY)
-                    {
-                        largestY = r.Y;
-                    }
-                }
-
-                return largestY;
-            }
+            if (newX < SmallestX)
+                SmallestX = newX;
+            if (newX > LargestX)
+                LargestX = newX;
+            if (newY < SmallestY)
+                SmallestY = newY;
+            if (newY > LargestY)
+                LargestY = newY;
         }
 
         public bool AddRoom(Room roomToAdd)
@@ -151,22 +74,22 @@ namespace DungeonAPI.Definitions
                 return false;
             }
 
-            bool success = allRooms.Add(roomToAdd);
+            allRooms.Add(roomToAdd.GetKeyValue(), roomToAdd);
+            UpdateExtremes(roomToAdd.X, roomToAdd.Y);
 
-            if(success)
-            {
-                roomToAdd.setToNorthOf(this.GetRoomAtCoords(roomToAdd.X, roomToAdd.Y - 1));
-                roomToAdd.setToEastOf(this.GetRoomAtCoords(roomToAdd.X -1, roomToAdd.Y));
-                roomToAdd.setToSouthOf(this.GetRoomAtCoords(roomToAdd.X, roomToAdd.Y + 1));
-                roomToAdd.setToWestOf(this.GetRoomAtCoords(roomToAdd.X + 1, roomToAdd.Y));
-            }
+            roomToAdd.SetToNorthOf(this.GetRoomAtCoords(roomToAdd.X, roomToAdd.Y - 1));
+            roomToAdd.SetToEastOf(this.GetRoomAtCoords(roomToAdd.X - 1, roomToAdd.Y));
+            roomToAdd.SetToSouthOf(this.GetRoomAtCoords(roomToAdd.X, roomToAdd.Y + 1));
+            roomToAdd.SetToWestOf(this.GetRoomAtCoords(roomToAdd.X + 1, roomToAdd.Y));
 
-            return success;
+            RoomCount ++;
+
+            return true;
         }
 
-        public HashSet<Room> GetRooms()
+        public List<Room> GetRooms()
         {
-            return allRooms;
+            return allRooms.Values.ToList();
         }
 
         public bool DoesNotHaveRoomAtCoords(int x, int y)
@@ -198,27 +121,12 @@ namespace DungeonAPI.Definitions
         {
             return this.GetRoomAtCoords(room.X - 1, room.Y);
         }
-
-        /* this seems inefficient somehow? can we store this as an array?
-         * since we have coordinates anyway? 
-         * is there some sort of array list structure in c#?
-         * could we add each room to the proper row or column and then
-         * sort that array of rooms, to keep a properly ordered set of rows or
-         * columns, and then lookup would be much faster?
-         * would need to pad with null rooms to keep a rectangle, though
-         * is this worth it, in terms of memory and time spent sorting?
-         * where is the hasRoomAtCoords method used, anyway?
-         * your comment in executeNextCommand 7b is something about
-         * if there is no room to the north, suggesting we could just use
-         * .North from the current room instead of hasRoomAtCoords
-         */
+        
         public Room GetRoomAtCoords(int x, int y)
         {
-            foreach (Room r in allRooms)
-            {
-                if (r.X == x && r.Y == y)
-                    return r;
-            }
+            long key = (((long)x) << 32) + y;
+            if (allRooms.ContainsKey(key))
+                return allRooms[key];
             return null;
         }
     }
