@@ -10,9 +10,9 @@ namespace DungeonVisualizer
         static void Main(string[] args)
         {
             uint[] buildCommands = new uint[8];
-            buildCommands[0] = 0x28008000;
+            /*buildCommands[0] = 0x28008000;
             buildCommands[1] = 0x22008000;
-            buildCommands[2] = 0x44008000;
+            buildCommands[2] = 0x44008000;*/
 
 
             //buildCommands[0] = 0xFFFFC400;
@@ -21,16 +21,16 @@ namespace DungeonVisualizer
             //buildCommands[0] = 0xFF000000;
 
 
-            /*buildCommands[0] = 0x48008000;
+            buildCommands[0] = 0x48008000;
             buildCommands[1] = 0x2FF04400;
             buildCommands[2] = 0x42008000;
             buildCommands[3] = 0x2FF04400;
             buildCommands[4] = 0x42008000;
             buildCommands[5] = 0x2FF04400;
             buildCommands[6] = 0x41008000;
-            buildCommands[7] = 0x2FF06400;*/
+            buildCommands[7] = 0x2FF06400;
 
-            FloorGenerator generator = new FloorGenerator(buildCommands, 100000);
+            FloorGenerator generator = new FloorGenerator(buildCommands, 1000000, 1, true);
             bool noSuccess = true;
             while (noSuccess)
             {
@@ -81,7 +81,7 @@ namespace DungeonVisualizer
                 System.IO.Directory.CreateDirectory(path);
             }
             catch (Exception) { }
-            using (System.IO.StreamWriter file = new System.IO.StreamWriter((path + "\\" + (success ? "successful" : "unsuccessful") + "Room" + (new Random()).Next() + ".txt")))
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter((path + "\\" + (success ? "successful" : "unsuccessful") + "Room" + RandomUtility.RandomPositiveInt() + ".txt")))
             {
                 file.WriteLine("This floor has " + numberOfRooms + " rooms (counting walls) and was created " + (success ? "successfully" : "unsuccessfully") + " for this sequence of commands:\n");
                 foreach (uint command in commands)
@@ -94,9 +94,9 @@ namespace DungeonVisualizer
                         if (rooms[row, col] == null)
                             file.Write("  ");
                         else if (rooms[row, col].IsWall)
-                            file.Write("()");
+                            file.Write("\u2591\u2591");
                         else
-                            file.Write("[]");
+                            file.Write("\u2588\u2588");
                     }
                     file.Write('\n');
                 }

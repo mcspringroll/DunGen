@@ -210,7 +210,6 @@ namespace DungeonAPI.Generation
             }
         }
 
-
         /// <summary>
         /// Takes all rooms in this FloorSprawler and
         /// rebuilds this FloorSprawler's contents so
@@ -232,56 +231,20 @@ namespace DungeonAPI.Generation
         public void shuffleRooms()
         {
             FloorSprawler newSprawler = new FloorSprawler();
-            Byte decisionByte = randomByte();
             bool originalDepthFirstValue = this.IsDepthFirst;
-            int i = 0;
+
             while (this.FrontNode != null)
             {
-                /*Though there is method call overhead here and more visible code that
-                * needs to run, using the ithBitEqualsOne method appears to be faster
-                * on large sets than the simpler solution of:
-                *     (new Random()).Next(2) == 0;
-                * Having it iterate through decisionByte until it runs out of space
-                * also appears to be significantly faster as well.
-                */
-                this.IsDepthFirst = ithBitEqualsOne(decisionByte, i++);
+                this.IsDepthFirst = RandomUtility.RandomBool();
                 
                 newSprawler.addRoom(this.removeNextRoom());
-                if (i == 8)//8 should probably be wrapped in a constant
-                {
-                    decisionByte = randomByte();
-                    i = 0;
-                }
             }
             this.FrontNode = newSprawler.FrontNode;
             this.EndNode = newSprawler.EndNode;
             this.NumberOfRooms = newSprawler.NumberOfRooms;
             this.IsDepthFirst = originalDepthFirstValue;
         }
-
-        /// <summary>
-        /// Gets a random byte.
-        /// </summary>
-        /// <returns></returns>
-        private Byte randomByte()
-        {
-            Byte[] randVals = new Byte[1];
-            (new Random()).NextBytes(randVals);
-            return randVals[0];
-        }
-
-        /// <summary>
-        /// Whether or not the ith bit in decisionByte
-        /// is 1 or 0.
-        /// </summary>
-        /// <param name="decisionByte"></param>
-        /// <param name="i"></param>
-        /// <returns>True if bit i in decisionByte is on.</returns>
-        private bool ithBitEqualsOne(Byte decisionByte, int i)
-        {
-            return ((decisionByte >> i) & 0x01) == 0x01; //had i++ here (instead of just i), probably wouldn't have hurt anything, but didn't seem too necessary?
-        }
-
+        
         /// <summary>
         /// Simple node container for a room.
         /// </summary>

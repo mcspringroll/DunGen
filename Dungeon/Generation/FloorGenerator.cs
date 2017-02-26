@@ -1,11 +1,7 @@
 ﻿using System;
 using DungeonAPI.Definitions;
 using DungeonAPI.Exceptions;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DungeonAPI.Generation
 {
@@ -21,8 +17,9 @@ namespace DungeonAPI.Generation
             commandCount,
             roomsBuilt,
             roomsToGenerate;
+        private bool wallAllRooms;
 
-        public FloorGenerator(uint[] commands, int numberOfRooms)
+        public FloorGenerator(uint[] commands, int numberOfRooms, int seed, bool wallAllRooms)
         {
             roomsToGenerate = numberOfRooms;
             floorBeingBuilt = new Floor();
@@ -30,6 +27,8 @@ namespace DungeonAPI.Generation
             activeFloorSprawler = new FloorSprawler();
             activeFloorSprawler.addRoom(floorBeingBuilt.StartRoom);
             commandCount = roomsBuilt = 0;
+            RandomUtility.Initialize(seed);
+            this.wallAllRooms = wallAllRooms;
         }
 
         public void Reset()
@@ -47,6 +46,8 @@ namespace DungeonAPI.Generation
         public Floor GenerateFloor()
         {
             PopulateFloorWithRooms();
+            if(wallAllRooms)
+                floorBeingBuilt.WallAllRooms();
             return floorBeingBuilt;
         }
 
@@ -601,7 +602,7 @@ namespace DungeonAPI.Generation
         /// <returns></returns>
         private bool TryForWallRoom()
         {
-            return ((new Random()).NextDouble() < currentCommand.WallChance);
+            return RandomUtility.RandomBoolWithProbability(currentCommand.WallChance);
         }
     }
 }

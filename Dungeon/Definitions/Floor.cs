@@ -87,6 +87,56 @@ namespace DungeonAPI.Definitions
             return true;
         }
 
+        /// <summary>
+        /// Places wall rooms adjacent to every room
+        /// in the floor.
+        /// </summary>
+        public void WallAllRooms()
+        {
+            Dictionary<long, Room> walls = new Dictionary<long, Room>();
+
+            foreach(Room r in allRooms.Values)
+            {
+                if (r.IsWall)
+                    continue;
+                if(r.North == null)
+                {
+                    Room newWallRoom = new Room(r.X, r.Y + 1);
+                    long key = newWallRoom.GetKeyValue();
+                    if(!walls.ContainsKey(key))
+                        walls.Add(key, newWallRoom);
+                }
+                if(r.East == null)
+                {
+                    Room newWallRoom = new Room(r.X + 1, r.Y);
+                    long key = newWallRoom.GetKeyValue();
+                    if (!walls.ContainsKey(key))
+                        walls.Add(key, newWallRoom);
+                }
+                if (r.South == null)
+                {
+                    Room newWallRoom = new Room(r.X, r.Y - 1);
+                    long key = newWallRoom.GetKeyValue();
+                    if (!walls.ContainsKey(key))
+                        walls.Add(key, newWallRoom);
+                }
+                if (r.West == null)
+                {
+                    Room newWallRoom = new Room(r.X - 1, r.Y);
+                    long key = newWallRoom.GetKeyValue();
+                    if (!walls.ContainsKey(key))
+                        walls.Add(key, newWallRoom);
+                }
+            }
+
+            foreach(Room wallRoom in walls.Values)
+            {
+                wallRoom.IsWall = true;
+                this.AddRoom(wallRoom);
+            }
+        }
+        
+
         public List<Room> GetRooms()
         {
             return allRooms.Values.ToList();

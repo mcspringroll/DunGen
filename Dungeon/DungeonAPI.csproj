@@ -53,6 +53,7 @@
     <Compile Include="Generation\FloorGenerator.cs" />
     <Compile Include="Generation\FloorSprawler.cs" />
     <Compile Include="Generation\GenerationCommand.cs" />
+    <Compile Include="Generation\RandomUtility.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Definitions\Room.cs" />
   </ItemGroup>
