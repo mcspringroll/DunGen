@@ -99,6 +99,10 @@ namespace DungeonAPI.Generation
                 if (r.IsNotWall && !r.HasAllNeighbors)
                     activeFloorSprawler.addRoom(r);
             }
+            if (activeFloorSprawler.NumberOfRooms == 0)
+            {
+                throw new NoRoomsToGenerateFromException();
+            }
         }
 
         /// <summary>
@@ -143,10 +147,6 @@ namespace DungeonAPI.Generation
                 if (activeFloorSprawler.NumberOfRooms == 0)
                 {
                     TryToRepopulateSprawler();
-                    if (activeFloorSprawler.NumberOfRooms == 0)
-                    {
-                        throw new NoRoomsToGenerateFromException();
-                    }
                 }
 
                 int roomsGenerated = ExecuteCommandOnce();

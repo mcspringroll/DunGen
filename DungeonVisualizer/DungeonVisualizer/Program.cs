@@ -18,7 +18,7 @@ namespace DungeonVisualizer
             //buildCommands[0] = 0xFFFFC400;
 
 
-            //buildCommands[0] = 0xFF000000;
+            //buildCommands[0] = 0xFC000400;
 
 
             buildCommands[0] = 0x48008000;
@@ -30,28 +30,36 @@ namespace DungeonVisualizer
             buildCommands[6] = 0x41008000;
             buildCommands[7] = 0x2FF06400;
 
-            FloorGenerator generator = new FloorGenerator(buildCommands, 1000000, 1, true);
+            FloorGenerator generator = new FloorGenerator(buildCommands, 10000, 1, true);
             bool noSuccess = true;
+            int timeElapsed = -1;
+
             while (noSuccess)
             {
+                DateTime startTime = DateTime.Now;
                 try
                 {
                     generator.GenerateFloor();
+
+                    timeElapsed = GetTimeElapsed(startTime, DateTime.Now);
+
                     noSuccess = false;
                 }
                 catch (NoRoomsToGenerateFromException)
                 {
+                    timeElapsed= GetTimeElapsed(startTime, DateTime.Now);
+
                     Console.WriteLine("Generation stopped because no more rooms were able to be added.");
                     Floor failedFloor = generator.GetFloor();
                     Room[,] roomsOfFailedFloor = SendFloorToArray(failedFloor);
-                    PrintRooms(roomsOfFailedFloor, failedFloor.RoomCount, buildCommands, false);
+                    PrintRooms(roomsOfFailedFloor, failedFloor.RoomCount, buildCommands, timeElapsed, false);
                     generator.Reset();
                 }
             }
             Console.WriteLine("Success!");
             Floor floor = generator.GetFloor();
             Room[,] rooms = SendFloorToArray(floor);
-            PrintRooms(rooms, floor.RoomCount, buildCommands, true);
+            PrintRooms(rooms, floor.RoomCount, buildCommands, timeElapsed, true);
         }
 
         private static Room[,] SendFloorToArray(Floor floorToConvert)
@@ -73,7 +81,7 @@ namespace DungeonVisualizer
             return rooms;
         }
 
-        private static void PrintRooms(Room[,] rooms, int numberOfRooms, uint[] commands, bool success)
+        private static void PrintRooms(Room[,] rooms, int numberOfRooms, uint[] commands, int timeElapsed, bool success)
         {
             string path = System.Reflection.Assembly.GetExecutingAssembly().Location + "\\..\\Rooms";
             try
@@ -83,7 +91,7 @@ namespace DungeonVisualizer
             catch (Exception) { }
             using (System.IO.StreamWriter file = new System.IO.StreamWriter((path + "\\" + (success ? "successful" : "unsuccessful") + "Room" + RandomUtility.RandomPositiveInt() + ".txt")))
             {
-                file.WriteLine("This floor has " + numberOfRooms + " rooms (counting walls) and was created " + (success ? "successfully" : "unsuccessfully") + " for this sequence of commands:\n");
+                file.WriteLine("This floor was created in " + timeElapsed + " seconds and has " + numberOfRooms + " rooms (counting walls) and was created " + (success ? "successfully" : "unsuccessfully") + " for this sequence of commands:\n");
                 foreach (uint command in commands)
                     file.WriteLine(command);
                 file.WriteLine("\n\n\n\n");
@@ -101,6 +109,11 @@ namespace DungeonVisualizer
                     file.Write('\n');
                 }
             }
+        }
+
+        private static int GetTimeElapsed(DateTime start, DateTime end)
+        {
+            return (int)(end - start).TotalSeconds;
         }
     }
 }
