@@ -9,7 +9,7 @@ namespace DungeonVisualizer
     {
         static void Main(string[] args)
         {
-            uint[] buildCommands = new uint[8];
+            uint[] buildCommands = new uint[1];
             /*buildCommands[0] = 0x28008000;
             buildCommands[1] = 0x22008000;
             buildCommands[2] = 0x44008000;*/
@@ -20,17 +20,18 @@ namespace DungeonVisualizer
 
             //buildCommands[0] = 0xFC000400;
 
+            buildCommands[0] = 4227859456;
 
-            buildCommands[0] = 0x48008000;
-            buildCommands[1] = 0x2FF04400;
-            buildCommands[2] = 0x42008000;
-            buildCommands[3] = 0x2FF04400;
-            buildCommands[4] = 0x42008000;
-            buildCommands[5] = 0x2FF04400;
-            buildCommands[6] = 0x41008000;
-            buildCommands[7] = 0x2FF06400;
+            //buildCommands[0] = 0x48008000;
+            //buildCommands[1] = 0x2FF04400;
+            //buildCommands[2] = 0x42008000;
+            //buildCommands[3] = 0x2FF04400;
+            //buildCommands[4] = 0x42008000;
+            //buildCommands[5] = 0x2FF04400;
+            //buildCommands[6] = 0x41008000;
+            //buildCommands[7] = 0x2FF06400;
 
-            FloorGenerator generator = new FloorGenerator(buildCommands, 10000, 1, true);
+            FloorGenerator generator = new FloorGenerator(buildCommands, 1000000, 1, true);
             bool noSuccess = true;
             int timeElapsed = -1;
 

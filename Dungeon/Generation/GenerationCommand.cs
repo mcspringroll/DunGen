@@ -14,184 +14,190 @@ namespace DungeonAPI.Generation
     public sealed class GenerationCommand
     {
         private const byte
-            MASK_REPETITIONS = 0xf0,    //1111 0000
-            MASK_DIRECTIONS = 0x0f,     //0000 1111
-            MASK_NORTH = 0x08,          //0000 1000
-            MASK_EAST = 0x04,           //0000 0100
-            MASK_SOUTH = 0x02,          //0000 0010
-            MASK_WEST = 0x01,           //0000 0001
-            MASK_CONTROLLER_DEPTH_FIRST = 0x80,         //1000 0000
-            MASK_CONTROLLER_SHUFFLE = 0x40,             //0100 0000
-            MASK_CONTROLLER_SHUFFLE_ROOMS = 0x20,       //0010 0000
-            MASK_CONTROLLER_TOGGLE_DEPTH_FIRST = 0x10,  //0001 0000
-            MASK_CONTROLLER_CONNECT_NEIGHBORS = 0x08,   //0000 1000
-            MASK_CONTROLLER_ALWAYS_NEW_ROOM = 0x04,     //0000 0100
-            MASK_CONTROLLER_MSI = 0x00, //???
-            MASK_CONTROLLER_LSI = 0x00, //???
-            MASK_CONTROLLER_LSB = 0x00; //???
-
-        private byte 
-            repetitionsAndDirections,
-            wallChance,
-            controllerMSB,
-            controllerLSB;
-
+            MASK_REPETITIONS                    = 0xf0, //1111 0000
+            MASK_DIRECTIONS                     = 0x0f, //0000 1111
+            MASK_NORTH                          = 0x08, //0000 1000
+            MASK_EAST                           = 0x04, //0000 0100
+            MASK_SOUTH                          = 0x02, //0000 0010
+            MASK_WEST                           = 0x01, //0000 0001
+            MASK_CONTROLLER_DEPTH_FIRST         = 0x80, //1000 0000
+            MASK_CONTROLLER_SHUFFLE             = 0x40, //0100 0000
+            MASK_CONTROLLER_SHUFFLE_ROOMS       = 0x20, //0010 0000
+            MASK_CONTROLLER_TOGGLE_DEPTH_FIRST  = 0x10, //0001 0000
+            MASK_CONTROLLER_CONNECT_NEIGHBORS   = 0x08, //0000 1000
+            MASK_CONTROLLER_ALWAYS_NEW_ROOM     = 0x04, //0000 0100
+            MASK_CONTROLLER_MSI                 = 0x00, //???
+            MASK_CONTROLLER_LSI                 = 0x00, //???
+            MASK_CONTROLLER_LSB                 = 0x00; //???
+        
         private bool roomsDepleted;
 
+        public GenerationCommand(){}
+
+        public static GenerationCommand ParseCommandSegment(uint segmentValue)
+        {
+            GenerationCommand toReturn = new GenerationCommand();
+
+            byte[] segmentBytes = ToByteArray(segmentValue);
+            byte repetitionsAndDirections = segmentBytes[0];
+            byte wallChance = segmentBytes[1];
+            byte controllerMSB = segmentBytes[2];
+            byte controllerLSB = segmentBytes[3];
+
+            toReturn.IsDepthFirst = (controllerMSB & MASK_CONTROLLER_DEPTH_FIRST) == MASK_CONTROLLER_DEPTH_FIRST; ;
+            toReturn.ShouldAlwaysBranchFromNewRoom = (controllerMSB & MASK_CONTROLLER_ALWAYS_NEW_ROOM) == MASK_CONTROLLER_ALWAYS_NEW_ROOM; ;
+            toReturn.ShouldShuffleAfterPass = (controllerMSB & MASK_CONTROLLER_SHUFFLE) == MASK_CONTROLLER_SHUFFLE; ;
+            toReturn.ShouldShuffleThisPass = (controllerMSB & MASK_CONTROLLER_SHUFFLE_ROOMS) == MASK_CONTROLLER_SHUFFLE_ROOMS;
+            toReturn.ShouldFlipDepthOrBreadthFirstAfterPass = (controllerMSB & MASK_CONTROLLER_TOGGLE_DEPTH_FIRST) == MASK_CONTROLLER_TOGGLE_DEPTH_FIRST;
+            toReturn.ShouldConnectNeighbors = (controllerMSB & MASK_CONTROLLER_CONNECT_NEIGHBORS) == MASK_CONTROLLER_CONNECT_NEIGHBORS;
+            toReturn.ShouldTryToBuildNorth = (repetitionsAndDirections & MASK_NORTH) == MASK_NORTH;
+            toReturn.ShouldTryToBuildEast = (repetitionsAndDirections & MASK_EAST) == MASK_EAST;
+            toReturn.ShouldTryToBuildSouth = (repetitionsAndDirections & MASK_SOUTH) == MASK_SOUTH;
+            toReturn.ShouldTryToBuildWest = (repetitionsAndDirections & MASK_WEST) == MASK_WEST;
+            toReturn.Repetitions = (byte)((repetitionsAndDirections & MASK_REPETITIONS) >> 4);
+            toReturn.WallChance = wallChance / 510.0;
+
+            toReturn.ResetRoomsLeft();
+            return toReturn;
+        }
+
+        #region Properties
+
+        /// <summary>
+        /// The number of rooms this comand will generate.
+        /// </summary>
+        public byte Repetitions { get; set; }
+
+        /// <summary>
+        /// The number of rooms left for this command to generate.
+        /// </summary>
         public byte RoomsLeft { get; private set; }
 
-        public GenerationCommand(uint segmentValue)
-        {
-            byte[] segmentBytes = ToByteArray(segmentValue);
-            repetitionsAndDirections = segmentBytes[0];
-            wallChance = segmentBytes[1];
-            controllerMSB = segmentBytes[2];
-            controllerLSB = segmentBytes[3];
-            ResetRoomsLeft();
-        }
+        /// <summary>
+        /// Controls type of sprawl.
+        /// </summary>
+        /// <returns></returns>
+        public bool IsDepthFirst { get; set; }
 
         /// <summary>
         /// Controls type of sprawl.
         /// </summary>
         /// <returns></returns>
-        public bool IsDepthFirst
-        {
-            get
-            {
-                return (controllerMSB & MASK_CONTROLLER_DEPTH_FIRST) == MASK_CONTROLLER_DEPTH_FIRST;
-            }
-        }
-
-        /// <summary>
-        /// Controls type of sprawl.
-        /// </summary>
-        /// <returns></returns>
-        public bool IsBreadthFirst
-        {
-            get
-            {
-                return !IsDepthFirst;
-            }
-        }
+        public bool IsBreadthFirst { get { return !IsDepthFirst; } set { IsDepthFirst = !value; } }
 
         /// <summary>
         /// Get, remove, and add rooms to end everytime, not just at end of pass.
         /// </summary>
         /// <returns></returns>
-        public bool ShouldAlwaysBranchFromNewRoom
-        {
-            get
-            {
-                return (controllerMSB & MASK_CONTROLLER_ALWAYS_NEW_ROOM) == MASK_CONTROLLER_ALWAYS_NEW_ROOM;
-            }
-        }
+        public bool ShouldAlwaysBranchFromNewRoom { get; set; }
 
         /// <summary>
         /// Get, remove, and add rooms to end at end of pass.
         /// </summary>
         /// <returns></returns>
-        public bool ShouldNotAlwaysBranchFromNewRoom
-        {
-            get
-            {
-                return !ShouldAlwaysBranchFromNewRoom;
-            }
-        }
+        public bool ShouldNotAlwaysBranchFromNewRoom { get { return !ShouldAlwaysBranchFromNewRoom; } set { ShouldAlwaysBranchFromNewRoom = !value; } }
 
         /// <summary>
         /// Randomize all stored rooms in sprawler.
         /// </summary>
         /// <returns></returns>
-        public bool ShouldShuffleAfterPass
-        {
-            get
-            {
-                return (controllerMSB & MASK_CONTROLLER_SHUFFLE) == MASK_CONTROLLER_SHUFFLE;
-            }
-        }
+        public bool ShouldShuffleAfterPass { get; set; }
+        
+        /// <summary>
+        /// Do not randomize all stored rooms in sprawler.
+        /// </summary>
+        /// <returns></returns>
+        public bool ShouldNotShuffleAfterPass { get { return !ShouldShuffleAfterPass; } set { ShouldShuffleAfterPass = !value; } }
 
         /// <summary>
         /// Randomize rooms before adding them to sprawler.
         /// </summary>
         /// <returns></returns>
-        public bool ShouldShuffleThisPass
-        {
-            get
-            {
-                return (controllerMSB & MASK_CONTROLLER_SHUFFLE_ROOMS) == MASK_CONTROLLER_SHUFFLE_ROOMS;
-            }
-        }
+        public bool ShouldShuffleThisPass { get; set; }
+
+        /// <summary>
+        /// Do not randomize rooms before adding them to sprawler.
+        /// </summary>
+        public bool ShouldNotShuffleThisPass { get { return !ShouldShuffleThisPass; } set { ShouldShuffleThisPass = !value; } }
 
         /// <summary>
         /// Switch between sprawl type after a pass is completed.
         /// </summary>
         /// <returns></returns>
-        public bool ShouldFlipDepthOrBreadthFirstAfterPass
-        {
-            get
-            {
-                return (controllerMSB & MASK_CONTROLLER_TOGGLE_DEPTH_FIRST) == MASK_CONTROLLER_TOGGLE_DEPTH_FIRST;
-            }
-        }
+        public bool ShouldFlipDepthOrBreadthFirstAfterPass { get; set; }
+
+        /// <summary>
+        /// Do not switch between sprawl type after a pass is completed.
+        /// </summary>
+        public bool ShouldNotFlipDepthOrBreadthFirstAfterPass { get { return !ShouldFlipDepthOrBreadthFirstAfterPass; } set { ShouldFlipDepthOrBreadthFirstAfterPass = !value; } }
 
         /// <summary>
         /// Controls if adjacent rooms should be connected.  If
         /// this returns false, then new rooms only connect to
         /// the room that branched to create them.
+        /// 
+        /// ToDo: Figure out if this feature currently has any value.
+        /// I do not believe it does right now.
         /// </summary>
         /// <returns></returns>
-        public bool ShouldConnectNeighbors
-        {
-            get
-            {
-                return (controllerMSB & MASK_CONTROLLER_CONNECT_NEIGHBORS) == MASK_CONTROLLER_CONNECT_NEIGHBORS;
-            }
-        }
+        public bool ShouldConnectNeighbors { get; set; }
+
+        /// <summary>
+        /// Adjacent rooms should not be connected.
+        /// 
+        /// ToDo: Figure out if this feature currently has any value.
+        /// I do not believe it does right now.
+        /// </summary>
+        public bool ShouldNotConnectNeighbors { get { return !ShouldConnectNeighbors; } set { ShouldConnectNeighbors = !value; } }
 
         /// <summary>
         /// If this command should allow trying to build to the north.
         /// </summary>
         /// <returns></returns>
-        public bool ShouldTryToBuildNorth
-        {
-            get
-            {
-                return (repetitionsAndDirections & MASK_NORTH) == MASK_NORTH;
-            }
-        }
+        public bool ShouldTryToBuildNorth { get; set; }
+
+        /// <summary>
+        /// If this command should disallow trying to build to the north.
+        /// </summary>
+        public bool ShouldNotTryToBuildNorth { get { return !ShouldTryToBuildNorth; } set { ShouldTryToBuildNorth = !value; } }
 
         /// <summary>
         /// If this command should allow trying to build to the east.
         /// </summary>
         /// <returns></returns>
-        public bool ShouldTryToBuildEast
-        {
-            get
-            {
-                return (repetitionsAndDirections & MASK_EAST) == MASK_EAST;
-            }
-        }
-        
+        public bool ShouldTryToBuildEast { get; set; }
+
+        /// <summary>
+        /// If this command should disallow trying to build to the east.
+        /// </summary>
+        public bool ShouldNotTryToBuildEast { get { return !ShouldTryToBuildEast; } set { ShouldTryToBuildEast = !value; } }
+
         /// <summary>
         /// If this command should allow trying to build to the south.
         /// </summary>
         /// <returns></returns>
-        public bool ShouldTryToBuildSouth
-        {
-            get
-            {
-                return (repetitionsAndDirections & MASK_SOUTH) == MASK_SOUTH;
-            }
-        }
+        public bool ShouldTryToBuildSouth { get; set; }
 
-        public bool ShouldTryToBuildWest
-        {
-            get
-            {
-                return (repetitionsAndDirections & MASK_WEST) == MASK_WEST;
-            }
-        }
+        /// <summary>
+        /// If this command should disallow trying to build to the south.
+        /// </summary>
+        public bool ShouldNotTryToBuildSouth { get { return !ShouldTryToBuildSouth; } set { ShouldTryToBuildSouth = !value; } }
 
+        /// <summary>
+        /// If this command should allow trying to build to the west.
+        /// </summary>
+        /// <returns></returns>
+        public bool ShouldTryToBuildWest { get; set; }
+
+        /// <summary>
+        /// If this command should disallow trying to build to the west.
+        /// </summary>
+        public bool ShouldNotTryToBuildWest { get { return !ShouldTryToBuildWest; } set { ShouldTryToBuildWest = !value; } }
+
+        /// <summary>
+        /// The amount of rooms this command will try to generate in a
+        /// single pass.
+        /// </summary>
         public int NumberOfRoomsInSinglePass
         {
             get
@@ -200,6 +206,10 @@ namespace DungeonAPI.Generation
             }
         }
 
+        /// <summary>
+        /// A textual mapping of the rooms this command will try to
+        /// generate.
+        /// </summary>
         public string RoomsInSinglePassAsString
         {
             get
@@ -218,6 +228,14 @@ namespace DungeonAPI.Generation
             }
         }
 
+        /// <summary>
+        /// The chance that this command gives for a room to be turned into
+        /// a wall.  The current maximum chance is 50%.
+        /// </summary>
+        public double WallChance { get; set; }
+
+        #endregion
+
         public void DecrementRoomsLeft()
         {
             if (!roomsDepleted)
@@ -229,11 +247,11 @@ namespace DungeonAPI.Generation
 
         public void ResetRoomsLeft()
         {
-            RoomsLeft = (byte)((repetitionsAndDirections & MASK_REPETITIONS) >> 4);
+            RoomsLeft = Repetitions;
             roomsDepleted = false;
         }
 
-        private byte[] ToByteArray(uint val)
+        private static byte[] ToByteArray(uint val)
         {
             byte[] bytes = BitConverter.GetBytes(val);
             if (BitConverter.IsLittleEndian)
@@ -241,20 +259,12 @@ namespace DungeonAPI.Generation
             return bytes;
         }
 
-        public double WallChance
-        {
-            get
-            {
-                return wallChance / 512.0;
-            }
-        }
-
         internal static GenerationCommand[] ParseArray(uint[] commands)
         {
             GenerationCommand[] toReturn = new GenerationCommand[commands.Length];
             for (int i = 0; i < commands.Length; i++)
             {
-                toReturn[i] = new GenerationCommand(commands[i]);
+                toReturn[i] = ParseCommandSegment(commands[i]);
             }
             return toReturn;
         }

@@ -226,7 +226,9 @@ namespace DungeonAPI.Generation
         /// project.  It performs semi-well with a high 
         /// tendency to leave the outer sections 
         /// less sorted than inner sections.  Therefore
-        /// it should be rewritten.
+        /// it should be rewritten.  Until it is, it
+        /// should be called several times to give a 
+        /// better shuffle.
         /// </summary>
         public void shuffleRooms()
         {
