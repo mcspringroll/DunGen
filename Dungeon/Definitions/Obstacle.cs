@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace DungeonAPI.Definitions
 {
-    public class Obstacle : PhysicalEntity
+    public class Obstacle<TRoom> : PhysicalEntity<TRoom> where TRoom : Room<TRoom>, new()
     {
-        public Obstacle(Room spawnRoom) : base(spawnRoom)
+        public Obstacle(Room<TRoom> spawnRoom) : base(spawnRoom)
         {
         }
         public bool BlocksVision { get; set; }

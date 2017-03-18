@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace DungeonAPI.Definitions
 {
-    public class Enemy : FightingEntity
+    public class Enemy<TRoom> : FightingEntity<TRoom> where TRoom : Room<TRoom>, new()
     {
-        public Enemy(Room spawnRoom) : base(spawnRoom)
+        public Enemy(TRoom spawnRoom) : base(spawnRoom)
         {
 
         }

@@ -5,14 +5,14 @@ using System.Collections.Generic;
 
 namespace DungeonAPI.Generation
 {
-    public class FloorGenerator
+    public class FloorGenerator <TRoom> where TRoom : Room<TRoom>, new()
     {
         private const int MAXIMUM_GENERATION_FAILS_BEFORE_COMMAND_IS_SKIPPED = 50;
 
-        private Floor floorBeingBuilt;
+        private Floor<TRoom> floorBeingBuilt;
         private GenerationCommand[] allCommands;
         private GenerationCommand currentCommand;
-        private FloorSprawler activeFloorSprawler;
+        private FloorSprawler<TRoom> activeFloorSprawler;
         private int
             commandCount,
             roomsBuilt,
@@ -22,9 +22,9 @@ namespace DungeonAPI.Generation
         public FloorGenerator(uint[] commands, int numberOfRooms, int seed, bool wallAllRooms)
         {
             roomsToGenerate = numberOfRooms;
-            floorBeingBuilt = new Floor();
+            floorBeingBuilt = new Floor<TRoom>();
             allCommands = GenerationCommand.ParseArray(commands);
-            activeFloorSprawler = new FloorSprawler();
+            activeFloorSprawler = new FloorSprawler<TRoom>();
             activeFloorSprawler.addRoom(floorBeingBuilt.StartRoom);
             commandCount = roomsBuilt = 0;
             RandomUtility.Initialize(seed);
@@ -33,17 +33,17 @@ namespace DungeonAPI.Generation
 
         public void Reset()
         {
-            floorBeingBuilt = new Floor();
+            floorBeingBuilt = new Floor<TRoom>();
             foreach(GenerationCommand command in allCommands)
             {
                 command.ResetRoomsLeft();
             }
-            activeFloorSprawler = new FloorSprawler();
+            activeFloorSprawler = new FloorSprawler<TRoom>();
             activeFloorSprawler.addRoom(floorBeingBuilt.StartRoom);
             commandCount = roomsBuilt = 0;
         }
 
-        public Floor GenerateFloor()
+        public Floor<TRoom> GenerateFloor()
         {
             PopulateFloorWithRooms();
             if(wallAllRooms)
@@ -51,7 +51,7 @@ namespace DungeonAPI.Generation
             return floorBeingBuilt;
         }
 
-        public Floor GetFloor()
+        public Floor<TRoom> GetFloor()
         {
             return floorBeingBuilt;
         }
@@ -93,8 +93,8 @@ namespace DungeonAPI.Generation
 
         private void TryToRepopulateSprawler()
         {
-            activeFloorSprawler = new FloorSprawler();
-            foreach (Room r in floorBeingBuilt.GetRooms())
+            activeFloorSprawler = new FloorSprawler<TRoom>();
+            foreach (TRoom r in floorBeingBuilt.GetRooms())
             {
                 if (r.IsNotWall && !r.HasAllNeighbors)
                     activeFloorSprawler.addRoom(r);
@@ -183,9 +183,9 @@ namespace DungeonAPI.Generation
         /// by the pass.</returns>
         private int ExecuteCommandOnce()
         {
-            Room roomToBuildFrom = GetRoomToBuildOnFromSprawler();
+            TRoom roomToBuildFrom = GetRoomToBuildOnFromSprawler();
 
-            List<Room> roomsInPass = BuildRoomsInPass(roomToBuildFrom);
+            List<TRoom> roomsInPass = BuildRoomsInPass(roomToBuildFrom);
 
             if (currentCommand.ShouldNotAlwaysBranchFromNewRoom)
             {
@@ -207,10 +207,10 @@ namespace DungeonAPI.Generation
         /// </summary>
         /// <param name="roomsInPass"></param>
         /// <returns>The number that aren't walls.</returns>
-        private int CountRoomsThatAreNotWalls(List<Room> roomsInPass)
+        private int CountRoomsThatAreNotWalls(List<TRoom> roomsInPass)
         {
             int roomsThatAreNotWalls = 0;
-            foreach (Room room in roomsInPass)
+            foreach (TRoom room in roomsInPass)
             {
                 if (room.IsNotWall)
                     roomsThatAreNotWalls++;
@@ -223,9 +223,9 @@ namespace DungeonAPI.Generation
         /// roomsInPass to that room.
         /// </summary>
         /// <param name="roomsInPass"></param>
-        private void ConnectNeighbors(List<Room> roomsInPass)
+        private void ConnectNeighbors(List<TRoom> roomsInPass)
         {
-            foreach (Room room in roomsInPass)
+            foreach (TRoom room in roomsInPass)
             {
                 TryToConnectToNorth(room);
                 TryToConnectToEast(room);
@@ -241,11 +241,11 @@ namespace DungeonAPI.Generation
         /// is changed.
         /// </summary>
         /// <param name="roomToConnectFrom"></param>
-        private void TryToConnectToNorth(Room roomToConnectFrom)
+        private void TryToConnectToNorth(TRoom roomToConnectFrom)
         {
             if (roomToConnectFrom.North == null)
             {
-                Room northNeighbor = floorBeingBuilt.GetRoomToNorth(roomToConnectFrom);
+                TRoom northNeighbor = floorBeingBuilt.GetRoomToNorth(roomToConnectFrom);
                 if (northNeighbor != null)
                 {
                     northNeighbor.IsConnectedToSouth = true;
@@ -261,11 +261,11 @@ namespace DungeonAPI.Generation
         /// is changed.
         /// </summary>
         /// <param name="roomToConnectFrom"></param>
-        private void TryToConnectToEast(Room roomToConnectFrom)
+        private void TryToConnectToEast(TRoom roomToConnectFrom)
         {
             if (roomToConnectFrom.East == null)
             {
-                Room eastNeighbor = floorBeingBuilt.GetRoomToEast(roomToConnectFrom);
+                TRoom eastNeighbor = floorBeingBuilt.GetRoomToEast(roomToConnectFrom);
                 if (eastNeighbor != null)
                 {
                     eastNeighbor.IsConnectedToWest = true;
@@ -281,11 +281,11 @@ namespace DungeonAPI.Generation
         /// is changed.
         /// </summary>
         /// <param name="roomToConnectFrom"></param>
-        private void TryToConnectToSouth(Room roomToConnectFrom)
+        private void TryToConnectToSouth(TRoom roomToConnectFrom)
         {
             if (roomToConnectFrom.South == null)
             {
-                Room southNeighbor = floorBeingBuilt.GetRoomToSouth(roomToConnectFrom);
+                TRoom southNeighbor = floorBeingBuilt.GetRoomToSouth(roomToConnectFrom);
                 if (southNeighbor != null)
                 {
                     southNeighbor.IsConnectedToNorth = true;
@@ -301,11 +301,11 @@ namespace DungeonAPI.Generation
         /// is changed.
         /// </summary>
         /// <param name="roomToConnectFrom"></param>
-        private void TryToConnectToWest(Room roomToConnectFrom)
+        private void TryToConnectToWest(TRoom roomToConnectFrom)
         {
             if (roomToConnectFrom.East == null)
             {
-                Room westNeighbor = floorBeingBuilt.GetRoomToWest(roomToConnectFrom);
+                TRoom westNeighbor = floorBeingBuilt.GetRoomToWest(roomToConnectFrom);
                 if (westNeighbor != null)
                 {
                     westNeighbor.IsConnectedToEast = true;
@@ -318,9 +318,9 @@ namespace DungeonAPI.Generation
         /// Finalizes every Room in roomsInPass List.
         /// </summary>
         /// <param name="roomsInPass"></param>
-        private void FinalizeRoomsInPass(List<Room> roomsInPass)
+        private void FinalizeRoomsInPass(List<TRoom> roomsInPass)
         {
-            foreach (Room room in roomsInPass)
+            foreach (TRoom room in roomsInPass)
             {
                 FinalizeAddingRoom(room);
             }
@@ -335,7 +335,7 @@ namespace DungeonAPI.Generation
         /// <returns>A List of type Room in a different order than roomsInPass
         /// if currentCommand specifies that passes should be shuffled.
         /// Otherwise, return roomsInPass.</returns>
-        private List<Room> TryToShuffleRoomsInPass(List<Room> roomsInPass)
+        private List<TRoom> TryToShuffleRoomsInPass(List<TRoom> roomsInPass)
         {
             if (currentCommand.ShouldShuffleThisPass)
             {
@@ -358,13 +358,13 @@ namespace DungeonAPI.Generation
         /// <returns>A List container of the rooms added to the
         /// floor during this method call.  This includes wall
         /// pieces.</returns>
-        private List<Room> BuildRoomsInPass(Room roomToBuildFrom)
+        private List<TRoom> BuildRoomsInPass(TRoom roomToBuildFrom)
         {
-            List<Room> roomsToReturn = new List<Room>();
+            List<TRoom> roomsToReturn = new List<TRoom>();
 
             if (currentCommand.ShouldTryToBuildNorth)
             {
-                Room northRoom = BuildNorthRoom(roomToBuildFrom);
+                TRoom northRoom = BuildNorthRoom(roomToBuildFrom);
                 if (northRoom != null)
                 {
                     if (currentCommand.ShouldAlwaysBranchFromNewRoom)
@@ -378,7 +378,7 @@ namespace DungeonAPI.Generation
 
             if (currentCommand.ShouldTryToBuildEast)
             {
-                Room eastRoom = BuildEastRoom(roomToBuildFrom);
+                TRoom eastRoom = BuildEastRoom(roomToBuildFrom);
                 if (eastRoom != null)
                 {
                     if (currentCommand.ShouldAlwaysBranchFromNewRoom)
@@ -392,7 +392,7 @@ namespace DungeonAPI.Generation
 
             if (currentCommand.ShouldTryToBuildSouth)
             {
-                Room southRoom = BuildSouthRoom(roomToBuildFrom);
+                TRoom southRoom = BuildSouthRoom(roomToBuildFrom);
                 if (southRoom != null)
                 {
                     if (currentCommand.ShouldAlwaysBranchFromNewRoom)
@@ -406,7 +406,7 @@ namespace DungeonAPI.Generation
 
             if (currentCommand.ShouldTryToBuildWest)
             {
-                Room westRoom = BuildWestRoom(roomToBuildFrom);
+                TRoom westRoom = BuildWestRoom(roomToBuildFrom);
                 if (westRoom != null)
                 {
                     if (currentCommand.ShouldAlwaysBranchFromNewRoom)
@@ -429,7 +429,7 @@ namespace DungeonAPI.Generation
         /// number of rooms created by currentCommand.
         /// </summary>
         /// <param name="roomToFinalize"></param>
-        private void FinalizeAddingRoom(Room roomToFinalize)
+        private void FinalizeAddingRoom(TRoom roomToFinalize)
         {
             roomToFinalize.IsWall = TryForWallRoom();
             if (roomToFinalize.IsNotWall)
@@ -449,13 +449,16 @@ namespace DungeonAPI.Generation
         /// <returns>A room connected to the north of
         /// roomtoBuildFrom if one does not exist at that location.
         /// Otherwise, returns null.</returns>
-        private Room BuildNorthRoom(Room roomToBuildFrom)
+        private TRoom BuildNorthRoom(TRoom roomToBuildFrom)
         {
-            Room northRoom = null;
+            TRoom northRoom = null;
 
             if (floorBeingBuilt.DoesNotHaveRoomAtCoords(roomToBuildFrom.X, roomToBuildFrom.Y + 1))
             {
-                northRoom = new Room(roomToBuildFrom.X, roomToBuildFrom.Y + 1);
+                northRoom = new TRoom();
+                northRoom.X = roomToBuildFrom.X;
+                northRoom.Y = roomToBuildFrom.Y + 1;
+                northRoom.SetToNorthOf(roomToBuildFrom);
                 floorBeingBuilt.AddRoom(northRoom);
 
                 return northRoom;
@@ -474,13 +477,16 @@ namespace DungeonAPI.Generation
         /// <returns>A room connected to the east of
         /// roomtoBuildFrom if one does not exist at that location.
         /// Otherwise, returns null.</returns>
-        private Room BuildEastRoom(Room roomToBuildFrom)
+        private TRoom BuildEastRoom(TRoom roomToBuildFrom)
         {
-            Room eastRoom = null;
+            TRoom eastRoom = null;
 
             if (floorBeingBuilt.DoesNotHaveRoomAtCoords(roomToBuildFrom.X + 1, roomToBuildFrom.Y))
             {
-                eastRoom = new Room(roomToBuildFrom.X + 1, roomToBuildFrom.Y);
+                eastRoom = new TRoom();
+                eastRoom.X = roomToBuildFrom.X + 1;
+                eastRoom.Y = roomToBuildFrom.Y;
+                eastRoom.SetToEastOf(roomToBuildFrom);
                 floorBeingBuilt.AddRoom(eastRoom);
 
                 return eastRoom;
@@ -499,13 +505,16 @@ namespace DungeonAPI.Generation
         /// <returns>A room connected to the south of
         /// roomtoBuildFrom if one does not exist at that location.
         /// Otherwise, returns null.</returns>
-        private Room BuildSouthRoom(Room roomToBuildFrom)
+        private TRoom BuildSouthRoom(TRoom roomToBuildFrom)
         {
-            Room southRoom = null;
+            TRoom southRoom = null;
 
             if (floorBeingBuilt.DoesNotHaveRoomAtCoords(roomToBuildFrom.X, roomToBuildFrom.Y - 1))
             {
-                southRoom = new Room(roomToBuildFrom.X, roomToBuildFrom.Y - 1);
+                southRoom = new TRoom();
+                southRoom.X = roomToBuildFrom.X;
+                southRoom.Y = roomToBuildFrom.Y - 1;
+                southRoom.SetToSouthOf(roomToBuildFrom);
                 floorBeingBuilt.AddRoom(southRoom);
 
                 return southRoom;
@@ -524,13 +533,15 @@ namespace DungeonAPI.Generation
         /// <returns>A room connected to the west of
         /// roomtoBuildFrom if one does not exist at that location.
         /// Otherwise, returns null.</returns>
-        private Room BuildWestRoom(Room roomToBuildFrom)
+        private TRoom BuildWestRoom(TRoom roomToBuildFrom)
         {
-            Room westRoom = null;
+            TRoom westRoom = null;
 
             if (floorBeingBuilt.DoesNotHaveRoomAtCoords(roomToBuildFrom.X - 1, roomToBuildFrom.Y))
             {
-                westRoom = new Room(roomToBuildFrom.X - 1, roomToBuildFrom.Y);
+                westRoom = new TRoom();
+                westRoom.X = roomToBuildFrom.X - 1;
+                westRoom.Y = roomToBuildFrom.Y;
                 floorBeingBuilt.AddRoom(westRoom);
 
                 return westRoom;
@@ -548,9 +559,9 @@ namespace DungeonAPI.Generation
         /// type is depth first this feature essentially does nothing.
         /// </summary>
         /// <returns>The room to build off from.</returns>
-        private Room GetRoomToBuildOnFromSprawler()
+        private TRoom GetRoomToBuildOnFromSprawler()
         {
-            Room roomToReturn = activeFloorSprawler.getNextRoom();
+            TRoom roomToReturn = activeFloorSprawler.getNextRoom();
 
             if (currentCommand.ShouldAlwaysBranchFromNewRoom)
             {
@@ -576,10 +587,10 @@ namespace DungeonAPI.Generation
         /// <param name="input"></param>
         /// <returns>A List of type Room where the order is
         /// different than the order within input.</returns>
-        private List<Room> GetShuffledRoomArray(List<Room> input)
+        private List<TRoom> GetShuffledRoomArray(List<TRoom> input)
         {
-            FloorSprawler tempSprawler = new FloorSprawler();
-            foreach (Room r in input)
+            FloorSprawler<TRoom> tempSprawler = new FloorSprawler<TRoom>();
+            foreach (TRoom r in input)
             {
                 if (r != null)
                 {
@@ -587,7 +598,7 @@ namespace DungeonAPI.Generation
                 }
             }
             tempSprawler.shuffleRooms();
-            List<Room> toReturn = new List<Room>();
+            List<TRoom> toReturn = new List<TRoom>();
             while (tempSprawler.HasNextRoom)
             {
                 toReturn.Add(tempSprawler.removeNextRoom());

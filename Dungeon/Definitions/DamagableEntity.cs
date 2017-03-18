@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DungeonAPI.Definitions
 {
-    public abstract class DamagableEntity : PhysicalEntity
+    public abstract class DamagableEntity<TRoom> : PhysicalEntity<TRoom> where TRoom : Room<TRoom>, new()
     {
         private int _health;
         public int MaxHealth { get; set; }
@@ -31,7 +31,7 @@ namespace DungeonAPI.Definitions
         public bool IsDead { get; set; }
         public bool IsNotDead { get { return !IsDead; } }
 
-        public DamagableEntity(Room spawnRoom) : base(spawnRoom)
+        public DamagableEntity(Room<TRoom> spawnRoom) : base(spawnRoom)
         {
 
         }

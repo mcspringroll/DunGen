@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace DungeonAPI.Definitions
 {
-    public class Room
+    public class Room <TRoom> where TRoom : Room<TRoom>, new()
     {
         #region Properties
-        public Room North { get; set; }
-        public Room East { get; set; }
-        public Room South { get; set; }
-        public Room West { get; set; }
+        public TRoom North { get; set; }
+        public TRoom East { get; set; }
+        public TRoom South { get; set; }
+        public TRoom West { get; set; }
 
         public bool IsConnectedToNorth { get; set; }
         public bool IsConnectedToEast { get; set; }
@@ -29,14 +29,14 @@ namespace DungeonAPI.Definitions
         }
 
         public List<Item> Items { get; set; }
-        public List<Enemy> Enemies { get; set; }
-        public int X { get; private set; }
-        public int Y { get; private set; }
+        public List<Enemy<TRoom>> Enemies { get; set; }
+        public int X { get; internal set; }
+        public int Y { get; internal set; }
         public bool IsClear
         {
             get
             {
-                foreach (Enemy e in Enemies)
+                foreach (Enemy<TRoom> e in Enemies)
                 {
                     if (e.IsNotDead)
                         return false;
@@ -76,39 +76,72 @@ namespace DungeonAPI.Definitions
             return (((long)X) << 32) + Y;
         }
 
+        public void DetachAllNeighbors()
+        {
+            if (this.North != null)
+            {
+                this.North = null;
+            }
+            if (this.East != null)
+            {
+                this.East = null;
+            }
+            if (this.South != null)
+            {
+                this.South = null;
+            }
+            if (this.West != null)
+            {
+                this.West = null;
+            }
+
+        }
+        
+        /// <summary>
+        /// Creates a new Room object with the same values
+        /// as this Room object.  For reference values,
+        /// references are preserved.  This could cause
+        /// issues if done recklessly.
+        /// </summary>
+        /// <returns></returns>
+        public Room<TRoom> Clone()
+        {
+            return (Room<TRoom>)MemberwiseClone();
+        }
+
         #region SetConnectionMethods
-        public bool SetToNorthOf(Room southernRoom)
+        public bool SetToNorthOf(TRoom southernRoom)
         {
             if (southernRoom == null || southernRoom.North != null || this.South != null)
                 return false;
-            southernRoom.North = this;
+            southernRoom.North = (TRoom)this;
             this.South = southernRoom;
             return true;
         }
 
-        public bool SetToEastOf(Room westernRoom)
+        public bool SetToEastOf(TRoom westernRoom)
         {
             if (westernRoom == null || westernRoom.East != null || this.West != null)
                 return false;
-            westernRoom.East = this;
+            westernRoom.East = (TRoom)this;
             this.West = westernRoom;
             return true;
         }
 
-        public bool SetToSouthOf(Room northernRoom)
+        public bool SetToSouthOf(TRoom northernRoom)
         {
             if (northernRoom == null || northernRoom.South != null || this.North != null)
                 return false;
-            northernRoom.South = this;
+            northernRoom.South = (TRoom)this;
             this.North = northernRoom;
             return true;
         }
 
-        public bool SetToWestOf(Room easternRoom)
+        public bool SetToWestOf(TRoom easternRoom)
         {
             if (easternRoom == null || easternRoom.West != null || this.East != null)
                 return false;
-            easternRoom.West = this;
+            easternRoom.West = (TRoom)this;
             this.East = easternRoom;
             return true;
         }

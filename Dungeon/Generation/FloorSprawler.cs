@@ -13,7 +13,7 @@ namespace DungeonAPI.Generation
     /// rooms added.  Allows for depth or breadth
     /// first style generation
     /// </summary>
-    class FloorSprawler
+    class FloorSprawler <TRoom> where TRoom : Room<TRoom>, new()
     {
         /// <summary>
         /// Generic constructor to initialize an
@@ -92,7 +92,7 @@ namespace DungeonAPI.Generation
         /// The newest room if IsDepthFirst is
         /// true.  Otherwise, the oldest room.
         /// </returns>
-        public Room getNextRoom()
+        public TRoom getNextRoom()
         {
             if (DoesNotHaveNextRoom)
                 return null;
@@ -113,9 +113,9 @@ namespace DungeonAPI.Generation
         /// The newest room if IsDepthFirst is
         /// true.  Otherwise, the oldest room.
         /// </returns>
-        public Room removeNextRoom()
+        public TRoom removeNextRoom()
         {
-            Room temp;
+            TRoom temp;
             if (DoesNotHaveNextRoom)
                 return null;
 
@@ -145,7 +145,7 @@ namespace DungeonAPI.Generation
         /// Addes a new room to the 
         /// </summary>
         /// <param name="toAdd"></param>
-        public void addRoom(Room toAdd)
+        public void addRoom(TRoom toAdd)
         {
             if (toAdd == null)
                 return;
@@ -232,7 +232,7 @@ namespace DungeonAPI.Generation
         /// </summary>
         public void shuffleRooms()
         {
-            FloorSprawler newSprawler = new FloorSprawler();
+            FloorSprawler<TRoom> newSprawler = new FloorSprawler<TRoom>();
             bool originalDepthFirstValue = this.IsDepthFirst;
 
             while (this.FrontNode != null)
@@ -268,7 +268,7 @@ namespace DungeonAPI.Generation
             /// The Room that is stored in this
             /// node.
             /// </summary>
-            public Room Data { get; set; }
+            public TRoom Data { get; set; }
         }
     }
 }

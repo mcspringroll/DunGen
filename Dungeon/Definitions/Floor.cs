@@ -6,25 +6,24 @@ using System.Threading.Tasks;
 
 namespace DungeonAPI.Definitions
 {
-    public class Floor
+    public class Floor <TRoom> where TRoom : Room<TRoom>, new()
     {
         public const int DEFAULT_ROOMS_FOR_FLOOR = 50;
         
         public Floor()
         {
-            CurrentRoom = StartRoom = new Room();
-            allRooms = new Dictionary<long, Room>();
+            CurrentRoom = StartRoom = new TRoom();
+            allRooms = new Dictionary<long, TRoom>();
             RoomCount = 0;
             AddRoom(CurrentRoom);
         }
 
-        private Dictionary<long, Room> allRooms;
+        private Dictionary<long, TRoom> allRooms;
 
-        public Room StartRoom { get; private set; }
+        public TRoom StartRoom { get; private set; }
 
-        public Room CurrentRoom { get; set; }
-
-
+        public TRoom CurrentRoom { get; set; }
+        
         public int RoomCount { get; private set; }
 
         public int Width
@@ -47,6 +46,38 @@ namespace DungeonAPI.Definitions
             }
         }
 
+        public bool GoNorth()
+        {
+            if (CurrentRoom.North == null)
+                return false;
+            CurrentRoom = CurrentRoom.North;
+            return true;
+        }
+
+        public bool GoEast()
+        {
+            if (CurrentRoom.East == null)
+                return false;
+            CurrentRoom = CurrentRoom.East;
+            return true;
+        }
+
+        public bool GoSouth()
+        {
+            if (CurrentRoom.South == null)
+                return false;
+            CurrentRoom = CurrentRoom.South;
+            return true;
+        }
+
+        public bool GoWest()
+        {
+            if (CurrentRoom.West == null)
+                return false;
+            CurrentRoom = CurrentRoom.West;
+            return true;
+        }
+
         public int SmallestX { get; private set; }
 
         public int SmallestY { get; private set; }
@@ -67,7 +98,7 @@ namespace DungeonAPI.Definitions
                 LargestY = newY;
         }
 
-        public bool AddRoom(Room roomToAdd)
+        public bool AddRoom(TRoom roomToAdd)
         {
             if (this.HasRoomAtCoords(roomToAdd.X, roomToAdd.Y))
             {
@@ -93,43 +124,47 @@ namespace DungeonAPI.Definitions
         /// </summary>
         public void WallAllRooms()
         {
-            Dictionary<long, Room> walls = new Dictionary<long, Room>();
+            Dictionary<long, TRoom> walls = new Dictionary<long, TRoom>();
 
-            foreach(Room r in allRooms.Values)
+            foreach(TRoom r in allRooms.Values)
             {
                 if (r.IsWall)
                     continue;
                 if(r.North == null)
                 {
-                    Room newWallRoom = new Room(r.X, r.Y + 1);
+                    TRoom newWallRoom = new TRoom();
+                    newWallRoom.SetToNorthOf(r);
                     long key = newWallRoom.GetKeyValue();
                     if(!walls.ContainsKey(key))
                         walls.Add(key, newWallRoom);
                 }
                 if(r.East == null)
                 {
-                    Room newWallRoom = new Room(r.X + 1, r.Y);
+                    TRoom newWallRoom = new TRoom();
+                    newWallRoom.SetToEastOf(null);
                     long key = newWallRoom.GetKeyValue();
                     if (!walls.ContainsKey(key))
                         walls.Add(key, newWallRoom);
                 }
                 if (r.South == null)
                 {
-                    Room newWallRoom = new Room(r.X, r.Y - 1);
+                    TRoom newWallRoom = new TRoom();
+                    newWallRoom.SetToSouthOf(r);
                     long key = newWallRoom.GetKeyValue();
                     if (!walls.ContainsKey(key))
                         walls.Add(key, newWallRoom);
                 }
                 if (r.West == null)
                 {
-                    Room newWallRoom = new Room(r.X - 1, r.Y);
+                    TRoom newWallRoom = new TRoom();
+                    newWallRoom.SetToWestOf(r);
                     long key = newWallRoom.GetKeyValue();
                     if (!walls.ContainsKey(key))
                         walls.Add(key, newWallRoom);
                 }
             }
 
-            foreach(Room wallRoom in walls.Values)
+            foreach(TRoom wallRoom in walls.Values)
             {
                 wallRoom.IsWall = true;
                 this.AddRoom(wallRoom);
@@ -137,7 +172,7 @@ namespace DungeonAPI.Definitions
         }
         
 
-        public List<Room> GetRooms()
+        public List<TRoom> GetRooms()
         {
             return allRooms.Values.ToList();
         }
@@ -152,27 +187,27 @@ namespace DungeonAPI.Definitions
             return GetRoomAtCoords(x, y) != null;
         }
 
-        public Room GetRoomToNorth(Room room)
+        public TRoom GetRoomToNorth(TRoom room)
         {
             return this.GetRoomAtCoords(room.X, room.Y + 1);
         }
 
-        public Room GetRoomToEast(Room room)
+        public TRoom GetRoomToEast(TRoom room)
         {
             return this.GetRoomAtCoords(room.X + 1, room.Y);
         }
 
-        public Room GetRoomToSouth(Room room)
+        public TRoom GetRoomToSouth(TRoom room)
         {
             return this.GetRoomAtCoords(room.X, room.Y - 1);
         }
 
-        public Room GetRoomToWest(Room room)
+        public TRoom GetRoomToWest(TRoom room)
         {
             return this.GetRoomAtCoords(room.X - 1, room.Y);
         }
         
-        public Room GetRoomAtCoords(int x, int y)
+        public TRoom GetRoomAtCoords(int x, int y)
         {
             long key = (((long)x) << 32) + y;
             if (allRooms.ContainsKey(key))

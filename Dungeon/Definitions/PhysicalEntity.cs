@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace DungeonAPI.Definitions
 {
-    public abstract class PhysicalEntity
+    public abstract class PhysicalEntity<TRoom> where TRoom : Room<TRoom>, new()
     {
         public int XLocation { get; set; }
         public int YLocation { get; set; }
 
-        public Room CurrentRoom { get; set; }
+        public Room<TRoom> CurrentRoom { get; set; }
         
         public void move(int moveX, int moveY)
         {
@@ -19,7 +19,7 @@ namespace DungeonAPI.Definitions
             YLocation += moveY;
         }
         
-        public PhysicalEntity(Room spawnRoom)
+        public PhysicalEntity(Room<TRoom> spawnRoom)
         {
             CurrentRoom = spawnRoom;
             XLocation = 0;

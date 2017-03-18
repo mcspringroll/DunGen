@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace DungeonAPI.Definitions
 {
-    public class Player : FightingEntity
+    public class Player<TRoom> : FightingEntity<TRoom> where TRoom : Room<TRoom>, new()
     {
-        public Player(Room spawnRoom) : base(spawnRoom)
+        public Player(Room<TRoom> spawnRoom) : base(spawnRoom)
         {
             MaxHealth = 3;
             Health = MaxHealth;

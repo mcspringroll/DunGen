@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DungeonAPI.Definitions
 {
-    public abstract class FightingEntity : DamagableEntity
+    public abstract class FightingEntity<TRoom> : DamagableEntity<TRoom> where TRoom : Room<TRoom>, new()
     {
         public Item EquippedItem { get; set; }
 
@@ -41,7 +41,7 @@ namespace DungeonAPI.Definitions
             Health -= damage;
         }
 
-        public FightingEntity(Room spawnRoom) : base(spawnRoom)
+        public FightingEntity(Room<TRoom> spawnRoom) : base(spawnRoom)
         {
 
         }
