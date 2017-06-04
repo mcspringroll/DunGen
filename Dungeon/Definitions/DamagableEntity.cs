@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DungeonAPI.Definitions
+﻿namespace DungeonAPI.Definitions
 {
-    public abstract class DamagableEntity<TRoom> : PhysicalEntity<TRoom> where TRoom : Room<TRoom>, new()
+    public abstract class DamagableEntity<TRoom> : PhysicalEntity<TRoom> where TRoom : AbstractRoom<TRoom>, new()
     {
         private int _health;
         public int MaxHealth { get; set; }
@@ -31,7 +25,7 @@ namespace DungeonAPI.Definitions
         public bool IsDead { get; set; }
         public bool IsNotDead { get { return !IsDead; } }
 
-        public DamagableEntity(Room<TRoom> spawnRoom) : base(spawnRoom)
+        public DamagableEntity(AbstractRoom<TRoom> spawnRoom) : base(spawnRoom)
         {
 
         }

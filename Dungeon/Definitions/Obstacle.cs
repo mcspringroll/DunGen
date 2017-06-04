@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DungeonAPI.Definitions
+﻿namespace DungeonAPI.Definitions
 {
-    public class Obstacle<TRoom> : PhysicalEntity<TRoom> where TRoom : Room<TRoom>, new()
+    public class Obstacle<TRoom> : PhysicalEntity<TRoom> where TRoom : AbstractRoom<TRoom>, new()
     {
-        public Obstacle(Room<TRoom> spawnRoom) : base(spawnRoom)
+        public Obstacle(AbstractRoom<TRoom> spawnRoom) : base(spawnRoom)
         {
         }
         public bool BlocksVision { get; set; }

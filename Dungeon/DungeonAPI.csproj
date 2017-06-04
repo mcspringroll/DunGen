@@ -49,6 +49,7 @@
     <Compile Include="Definitions\Obstacle.cs" />
     <Compile Include="Definitions\PhysicalEntity.cs" />
     <Compile Include="Definitions\Player.cs" />
+    <Compile Include="Definitions\AbstractRoom.cs" />
     <Compile Include="Exceptions\NoRoomsToGenerateFromException.cs" />
     <Compile Include="Generation\FloorGenerator.cs" />
     <Compile Include="Generation\FloorSprawler.cs" />
