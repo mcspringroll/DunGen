@@ -1,11 +1,10 @@
-﻿using System;
-using DungeonAPI.Definitions;
+﻿using DungeonAPI.Definitions;
 using DungeonAPI.Exceptions;
 using System.Collections.Generic;
 
 namespace DungeonAPI.Generation
 {
-    public class FloorGenerator <TRoom> where TRoom : Room<TRoom>, new()
+    public class FloorGenerator <TRoom> where TRoom : AbstractRoom<TRoom>, new()
     {
         private const int MAXIMUM_GENERATION_FAILS_BEFORE_COMMAND_IS_SKIPPED = 50;
 

@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DungeonAPI.Definitions
 {
-    public class Floor <TRoom> where TRoom : Room<TRoom>, new()
+    public class Floor <TRoom> where TRoom : AbstractRoom<TRoom>, new()
     {
         public const int DEFAULT_ROOMS_FOR_FLOOR = 50;
         
@@ -133,6 +130,8 @@ namespace DungeonAPI.Definitions
                 if(r.North == null)
                 {
                     TRoom newWallRoom = new TRoom();
+                    newWallRoom.X = r.X;
+                    newWallRoom.Y = r.Y + 1;
                     newWallRoom.SetToNorthOf(r);
                     long key = newWallRoom.GetKeyValue();
                     if(!walls.ContainsKey(key))
@@ -141,6 +140,8 @@ namespace DungeonAPI.Definitions
                 if(r.East == null)
                 {
                     TRoom newWallRoom = new TRoom();
+                    newWallRoom.X = r.X + 1;
+                    newWallRoom.Y = r.Y;
                     newWallRoom.SetToEastOf(null);
                     long key = newWallRoom.GetKeyValue();
                     if (!walls.ContainsKey(key))
@@ -149,6 +150,8 @@ namespace DungeonAPI.Definitions
                 if (r.South == null)
                 {
                     TRoom newWallRoom = new TRoom();
+                    newWallRoom.X = r.X;
+                    newWallRoom.Y = r.Y - 1;
                     newWallRoom.SetToSouthOf(r);
                     long key = newWallRoom.GetKeyValue();
                     if (!walls.ContainsKey(key))
@@ -157,6 +160,8 @@ namespace DungeonAPI.Definitions
                 if (r.West == null)
                 {
                     TRoom newWallRoom = new TRoom();
+                    newWallRoom.X = r.X - 1;
+                    newWallRoom.Y = r.Y;
                     newWallRoom.SetToWestOf(r);
                     long key = newWallRoom.GetKeyValue();
                     if (!walls.ContainsKey(key))

@@ -9,7 +9,7 @@ namespace DungeonVisualizer
     {
         static void Main(string[] args)
         {
-            uint[] buildCommands = new uint[1];
+            uint[] buildCommands = new uint[8];
             /*buildCommands[0] = 0x28008000;
             buildCommands[1] = 0x22008000;
             buildCommands[2] = 0x44008000;*/
@@ -20,18 +20,18 @@ namespace DungeonVisualizer
 
             //buildCommands[0] = 0xFC000400;
 
-            buildCommands[0] = 4227859456;
+           // buildCommands[0] = 4227859456;
+            
+            buildCommands[0] = 0x48008000;
+            buildCommands[1] = 0x2FF04400;
+            buildCommands[2] = 0x42008000;
+            buildCommands[3] = 0x2FF04400;
+            buildCommands[4] = 0x42008000;
+            buildCommands[5] = 0x2FF04400;
+            buildCommands[6] = 0x41008000;
+            buildCommands[7] = 0x2FF06400;
 
-            //buildCommands[0] = 0x48008000;
-            //buildCommands[1] = 0x2FF04400;
-            //buildCommands[2] = 0x42008000;
-            //buildCommands[3] = 0x2FF04400;
-            //buildCommands[4] = 0x42008000;
-            //buildCommands[5] = 0x2FF04400;
-            //buildCommands[6] = 0x41008000;
-            //buildCommands[7] = 0x2FF06400;
-
-            FloorGenerator generator = new FloorGenerator(buildCommands, 1000000, 1, true);
+            FloorGenerator<Room> generator = new FloorGenerator<Room>(buildCommands, 100, 1, true);
             bool noSuccess = true;
             int timeElapsed = -1;
 
@@ -51,19 +51,19 @@ namespace DungeonVisualizer
                     timeElapsed= GetTimeElapsed(startTime, DateTime.Now);
 
                     Console.WriteLine("Generation stopped because no more rooms were able to be added.");
-                    Floor failedFloor = generator.GetFloor();
+                    Floor<Room> failedFloor = generator.GetFloor();
                     Room[,] roomsOfFailedFloor = SendFloorToArray(failedFloor);
                     PrintRooms(roomsOfFailedFloor, failedFloor.RoomCount, buildCommands, timeElapsed, false);
                     generator.Reset();
                 }
             }
             Console.WriteLine("Success!");
-            Floor floor = generator.GetFloor();
+            Floor<Room> floor = generator.GetFloor();
             Room[,] rooms = SendFloorToArray(floor);
             PrintRooms(rooms, floor.RoomCount, buildCommands, timeElapsed, true);
         }
 
-        private static Room[,] SendFloorToArray(Floor floorToConvert)
+        private static Room[,] SendFloorToArray(Floor<Room> floorToConvert)
         {
             int smallestX = floorToConvert.SmallestX,
                     smallestY = floorToConvert.SmallestY,

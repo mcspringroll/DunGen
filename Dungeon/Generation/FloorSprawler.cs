@@ -1,9 +1,4 @@
-﻿using System;
-using DungeonAPI.Definitions;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using DungeonAPI.Definitions;
 
 namespace DungeonAPI.Generation
 {
@@ -13,7 +8,7 @@ namespace DungeonAPI.Generation
     /// rooms added.  Allows for depth or breadth
     /// first style generation
     /// </summary>
-    class FloorSprawler <TRoom> where TRoom : Room<TRoom>, new()
+    class FloorSprawler <TRoom> where TRoom : AbstractRoom<TRoom>, new()
     {
         /// <summary>
         /// Generic constructor to initialize an
