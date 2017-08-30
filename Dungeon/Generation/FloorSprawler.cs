@@ -225,7 +225,7 @@ namespace DungeonAPI.Generation
         /// should be called several times to give a 
         /// better shuffle.
         /// </summary>
-        public void shuffleRooms()
+        public void ShuffleRooms()
         {
             FloorSprawler<TRoom> newSprawler = new FloorSprawler<TRoom>();
             bool originalDepthFirstValue = this.IsDepthFirst;

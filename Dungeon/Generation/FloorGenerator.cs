@@ -153,11 +153,11 @@ namespace DungeonAPI.Generation
 
                 if (currentCommand.ShouldShuffleAfterPass)
                 {
-                    activeFloorSprawler.shuffleRooms();
-                    activeFloorSprawler.shuffleRooms();
-                    activeFloorSprawler.shuffleRooms();
-                    activeFloorSprawler.shuffleRooms();
-                    activeFloorSprawler.shuffleRooms();
+                    activeFloorSprawler.ShuffleRooms();
+                    activeFloorSprawler.ShuffleRooms();
+                    activeFloorSprawler.ShuffleRooms();
+                    activeFloorSprawler.ShuffleRooms();
+                    activeFloorSprawler.ShuffleRooms();
                 }
 
                 if (currentCommand.ShouldFlipDepthOrBreadthFirstAfterPass)
@@ -580,7 +580,7 @@ namespace DungeonAPI.Generation
         /// <summary>
         /// Changes the order of input by adding the Room
         /// objects to a temporary FloorSprawler and using
-        /// the shuffleRooms method of that class.  Returns
+        /// the ShuffleRooms method of that class.  Returns
         /// as a new object.
         /// </summary>
         /// <param name="input"></param>
@@ -596,7 +596,7 @@ namespace DungeonAPI.Generation
                     tempSprawler.addRoom(r);
                 }
             }
-            tempSprawler.shuffleRooms();
+            tempSprawler.ShuffleRooms();
             List<TRoom> toReturn = new List<TRoom>();
             while (tempSprawler.HasNextRoom)
             {
